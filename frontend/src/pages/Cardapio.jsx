@@ -85,7 +85,7 @@ export default function Cardapio() {
   return (
     <div className="p-8">
       <header>
-        <h1 className="text-2xl font-semibold text-stone-900">Cardápio</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900">Cardápio</h1>
         <p className="mt-1 text-sm text-stone-500">
           Puxa os produtos já existentes numa plataforma. Você decide, item a item: criar produto novo ou mesclar com
           um que já foi importado de outra plataforma.
@@ -93,13 +93,13 @@ export default function Cardapio() {
       </header>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-md border border-stone-300 p-1">
+        <div className="inline-flex rounded-lg border border-stone-300 bg-white p-1 shadow-sm">
           {Object.entries(PLATAFORMA_LABEL).map(([valor, label]) => (
             <button
               key={valor}
               type="button"
               onClick={() => setPlataforma(valor)}
-              className={`rounded px-3 py-1 text-sm font-medium transition ${
+              className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition ${
                 plataforma === valor ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
               }`}
             >
@@ -112,7 +112,7 @@ export default function Cardapio() {
           type="button"
           onClick={buscar}
           disabled={carregando}
-          className="rounded-md bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
         >
           {carregando ? 'Buscando...' : 'Buscar cardápio'}
         </button>
@@ -122,17 +122,19 @@ export default function Cardapio() {
             type="button"
             onClick={importarSelecionados}
             disabled={importando}
-            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50"
           >
             {importando ? 'Importando...' : `Importar ${selecionadosCount} selecionado(s)`}
           </button>
         )}
       </div>
 
-      {erro && <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>}
+      {erro && (
+        <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+      )}
 
       {resultado && (
-        <div className="mt-4 space-y-1 rounded-md bg-stone-100 px-4 py-3 text-sm">
+        <div className="mt-4 space-y-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm shadow-sm">
           {resultado.map((r) => (
             <p key={r.itemId} className={r.sucesso ? 'text-emerald-700' : 'text-red-700'}>
               {r.itemId}:{' '}
@@ -147,9 +149,9 @@ export default function Cardapio() {
       )}
 
       {itens.length > 0 && (
-        <div className="mt-6 divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white">
+        <div className="mt-6 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
           {itens.map((item) => (
-            <div key={item.itemId} className="flex items-center gap-3 px-4 py-3">
+            <div key={item.itemId} className="flex items-center gap-3 px-5 py-4 hover:bg-stone-50/60">
               <input
                 type="checkbox"
                 checked={!!selecionados[item.itemId]}
@@ -166,14 +168,14 @@ export default function Cardapio() {
               </div>
 
               {item.jaImportado ? (
-                <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-stone-500">
+                <span className="shrink-0 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-500">
                   Já importado
                 </span>
               ) : (
                 <select
                   value={escolhas[item.itemId] ?? ''}
                   onChange={(e) => mudarEscolha(item.itemId, e.target.value)}
-                  className="shrink-0 rounded-md border border-stone-300 px-2 py-1 text-xs text-stone-700"
+                  className="shrink-0 rounded-lg border border-stone-300 px-2.5 py-1.5 text-xs text-stone-700"
                 >
                   <option value="">Criar produto novo</option>
                   {produtosExistentes.map((p) => (

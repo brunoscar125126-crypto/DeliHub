@@ -147,27 +147,27 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
 
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg">
-        <h3 className="font-medium text-stone-900">Pausar {PLATAFORMA_LABEL[plataforma]}</h3>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+        <h3 className="text-lg font-semibold text-stone-900">Pausar {PLATAFORMA_LABEL[plataforma]}</h3>
 
         {plataforma === 'ifood' ? (
-          <div className="mt-3 space-y-3">
+          <div className="mt-4 space-y-3.5">
             <label className="block text-sm">
-              <span className="text-stone-600">Motivo (opcional)</span>
+              <span className="text-stone-500">Motivo (opcional)</span>
               <input
                 type="text"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
                 placeholder="Ex: falta de entregador"
               />
             </label>
             <label className="block text-sm">
-              <span className="text-stone-600">Duração</span>
+              <span className="text-stone-500">Duração</span>
               <select
                 value={minutos}
                 onChange={(e) => setMinutos(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
               >
                 <option value={15}>15 minutos</option>
                 <option value={30}>30 minutos</option>
@@ -177,13 +177,13 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
             </label>
           </div>
         ) : (
-          <div className="mt-3 space-y-3">
+          <div className="mt-4 space-y-3.5">
             <label className="block text-sm">
-              <span className="text-stone-600">Duração</span>
+              <span className="text-stone-500">Duração</span>
               <select
                 value={duracao}
                 onChange={(e) => setDuracao(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
               >
                 {DURACOES_99FOOD.map((d) => (
                   <option key={d.valor} value={d.valor}>
@@ -193,11 +193,11 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-stone-600">Motivo (obrigatório)</span>
+              <span className="text-stone-500">Motivo (obrigatório)</span>
               <select
                 value={motivoCode}
                 onChange={(e) => setMotivoCode(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
               >
                 {MOTIVOS_99FOOD.map((m) => (
                   <option key={m.valor} value={m.valor}>
@@ -215,11 +215,11 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
 
         {erro && <p className="mt-3 text-xs text-red-600">{erro}</p>}
 
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={onFechar}
-            className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
+            className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
           >
             Cancelar
           </button>
@@ -227,7 +227,7 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
             type="button"
             onClick={confirmar}
             disabled={enviando}
-            className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-500 disabled:opacity-50"
           >
             {enviando ? 'Pausando...' : 'Confirmar pausa'}
           </button>
@@ -264,9 +264,9 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
   }
 
   return (
-    <div className="rounded-lg border border-stone-200 bg-white p-4">
+    <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium text-stone-900">{PLATAFORMA_LABEL[plataforma]}</h3>
+        <h3 className="font-semibold text-stone-900">{PLATAFORMA_LABEL[plataforma]}</h3>
         <div className="flex gap-2">
           {editando ? (
             <>
@@ -276,7 +276,7 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
                   setEditando(false);
                   setRascunho(turnos);
                 }}
-                className="rounded-md border border-stone-300 px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-100"
+                className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
               >
                 Cancelar
               </button>
@@ -284,7 +284,7 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
                 type="button"
                 onClick={salvar}
                 disabled={salvando}
-                className="rounded-md bg-stone-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+                className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-stone-700 disabled:opacity-50"
               >
                 {salvando ? 'Salvando...' : 'Salvar horário'}
               </button>
@@ -294,14 +294,14 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
               <button
                 type="button"
                 onClick={() => setMostrarPausa(true)}
-                className="rounded-md border border-amber-300 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50"
+                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
               >
                 Pausar agora
               </button>
               <button
                 type="button"
                 onClick={() => setEditando(true)}
-                className="rounded-md border border-stone-300 px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-100"
+                className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
               >
                 Customizar
               </button>
@@ -313,7 +313,7 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
       {erro && <p className="mt-2 text-xs text-red-600">Erro ao carregar: {erro}</p>}
       {erroSalvar && <p className="mt-2 text-xs text-red-600">Erro ao salvar: {erroSalvar}</p>}
 
-      <div className="mt-3">
+      <div className="mt-4">
         <GradeSemanal turnos={editando ? rascunho : turnos} editando={editando} onChange={setRascunho} />
       </div>
 
@@ -391,27 +391,29 @@ export default function Configuracoes() {
     <div className="p-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Configurações</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Configurações</h1>
           <p className="mt-1 text-sm text-stone-500">Horário de funcionamento e pausas</p>
         </div>
         <button
           type="button"
           onClick={carregar}
-          className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
+          className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-600 shadow-sm hover:bg-stone-50"
         >
           Atualizar
         </button>
       </header>
 
-      {erro && <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>}
+      {erro && (
+        <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+      )}
 
       {carregando ? (
         <p className="mt-8 text-sm text-stone-500">Carregando...</p>
       ) : (
         dados && (
           <>
-            <section className="mt-6 rounded-lg border border-stone-200 bg-white p-4">
-              <h2 className="font-medium text-stone-900">Horário semanal</h2>
+            <section className="mt-6 rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+              <h2 className="font-semibold text-stone-900">Horário semanal</h2>
               <p className="mt-1 text-sm text-stone-500">
                 Edite uma vez e aplique nas plataformas marcadas abaixo. Plataforma desmarcada mantém o horário atual
                 dela — customize individualmente na seção abaixo, se precisar.
@@ -421,7 +423,7 @@ export default function Configuracoes() {
                 <GradeSemanal turnos={turnosUnificados} editando onChange={setTurnosUnificados} />
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-stone-100 pt-4">
+              <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-stone-100 pt-5">
                 <span className="text-sm text-stone-600">Aplicar em:</span>
                 {Object.keys(PLATAFORMA_LABEL).map((plataforma) => (
                   <label key={plataforma} className="flex items-center gap-1.5 text-sm text-stone-700">
@@ -437,7 +439,7 @@ export default function Configuracoes() {
                   type="button"
                   onClick={salvarUnificado}
                   disabled={salvandoUnificado || Object.values(aplicarEm).every((v) => !v)}
-                  className="ml-auto rounded-md bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+                  className="ml-auto rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
                 >
                   {salvandoUnificado ? 'Salvando...' : 'Salvar horário'}
                 </button>
@@ -458,7 +460,7 @@ export default function Configuracoes() {
             </section>
 
             <section className="mt-8">
-              <h2 className="text-sm font-medium text-stone-700">Customizar por plataforma</h2>
+              <h2 className="text-sm font-semibold text-stone-700">Customizar por plataforma</h2>
               <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <PainelPersonalizado
                   plataforma="ifood"

@@ -116,7 +116,7 @@ function CelulaPlataforma({ produtoId, plataforma, vinculo, onMudou }) {
       <button
         type="button"
         onClick={() => setVinculando(true)}
-        className="flex items-center gap-1 rounded border border-dashed border-stone-300 px-2 py-1 text-xs text-stone-400 hover:border-orange-400 hover:text-orange-600"
+        className="flex items-center gap-1 rounded-full border border-dashed border-stone-300 px-2.5 py-1 text-xs text-stone-400 hover:border-orange-400 hover:text-orange-600"
       >
         <Plus size={12} /> vincular
       </button>
@@ -199,77 +199,77 @@ function ModalProduto({ produto, onFechar, onSalvo }) {
 
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-lg">
-        <h3 className="font-medium text-stone-900">{produto ? 'Editar produto' : 'Novo produto'}</h3>
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <h3 className="text-lg font-semibold text-stone-900">{produto ? 'Editar produto' : 'Novo produto'}</h3>
 
-        <div className="mt-3 space-y-3">
+        <div className="mt-4 space-y-3.5">
           <label className="block text-sm">
-            <span className="text-stone-600">Nome</span>
+            <span className="text-stone-500">Nome</span>
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
             />
           </label>
           <label className="block text-sm">
-            <span className="text-stone-600">Descrição</span>
+            <span className="text-stone-500">Descrição</span>
             <input
               type="text"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
             />
           </label>
           <label className="block text-sm">
-            <span className="text-stone-600">Categoria</span>
+            <span className="text-stone-500">Categoria</span>
             <input
               type="text"
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
-              className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
             />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3.5">
             <label className="block text-sm">
-              <span className="text-stone-600">Preço (R$)</span>
+              <span className="text-stone-500">Preço (R$)</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={preco}
                 onChange={(e) => setPreco(e.target.value)}
-                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
               />
             </label>
             <label className="block text-sm">
-              <span className="text-stone-600">Custo (R$, opcional)</span>
+              <span className="text-stone-500">Custo (R$, opcional)</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={custo}
                 onChange={(e) => setCusto(e.target.value)}
-                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
               />
             </label>
           </div>
           <label className="block text-sm">
-            <span className="text-stone-600">URL da imagem (opcional)</span>
+            <span className="text-stone-500">URL da imagem (opcional)</span>
             <input
               type="text"
               value={imagemUrl}
               onChange={(e) => setImagemUrl(e.target.value)}
-              className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
             />
           </label>
         </div>
 
         {erro && <p className="mt-3 text-xs text-red-600">{erro}</p>}
 
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={onFechar}
-            className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
+            className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
           >
             Cancelar
           </button>
@@ -277,7 +277,7 @@ function ModalProduto({ produto, onFechar, onSalvo }) {
             type="button"
             onClick={salvar}
             disabled={salvando}
-            className="rounded-md bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
           >
             {salvando ? 'Salvando...' : 'Salvar'}
           </button>
@@ -333,13 +333,13 @@ export default function Produtos() {
     <div className="p-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Produtos</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Produtos</h1>
           <p className="mt-1 text-sm text-stone-500">Gerencie seus produtos e vínculos por plataforma</p>
         </div>
         <button
           type="button"
           onClick={() => setModalProduto({})}
-          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+          className="rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-600"
         >
           + Novo Produto
         </button>
@@ -351,31 +351,33 @@ export default function Produtos() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto ou categoria..."
-          className="w-full max-w-sm rounded-md border border-stone-300 px-3 py-2 text-sm"
+          className="w-full max-w-sm rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm shadow-sm"
         />
       </div>
 
-      {erro && <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>}
+      {erro && (
+        <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+      )}
 
       {carregando ? (
         <p className="mt-8 text-sm text-stone-500">Carregando...</p>
       ) : produtosFiltrados.length === 0 ? (
         <p className="mt-8 text-sm text-stone-500">Nenhum produto encontrado.</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-lg border border-stone-200 bg-white">
+        <div className="mt-6 overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-400">
-                <th className="px-4 py-3 font-medium">Produto</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
+              <tr className="border-b border-stone-200 bg-stone-50/60 text-xs uppercase tracking-wide text-stone-400">
+                <th className="px-5 py-3.5 font-medium">Produto</th>
+                <th className="px-5 py-3.5 font-medium">Categoria</th>
                 {PLATAFORMAS.map((p) => (
-                  <th key={p.chave} className="px-4 py-3 font-medium">
+                  <th key={p.chave} className="px-5 py-3.5 font-medium">
                     {p.label}
                   </th>
                 ))}
-                <th className="px-4 py-3 font-medium">Custo</th>
-                <th className="px-4 py-3 font-medium">Margem</th>
-                <th className="px-4 py-3 font-medium">Ações</th>
+                <th className="px-5 py-3.5 font-medium">Custo</th>
+                <th className="px-5 py-3.5 font-medium">Margem</th>
+                <th className="px-5 py-3.5 font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -385,14 +387,14 @@ export default function Produtos() {
                     ? Math.round(((produto.precoCentavos - produto.custoCentavos) / produto.precoCentavos) * 100)
                     : null;
                 return (
-                  <tr key={produto.id} className="border-b border-stone-100 last:border-0">
-                    <td className="px-4 py-3">
+                  <tr key={produto.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/60">
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         {produto.imagemUrl ? (
                           <img
                             src={produto.imagemUrl}
                             alt=""
-                            className="h-9 w-9 shrink-0 rounded-full object-cover"
+                            className="h-10 w-10 shrink-0 rounded-full object-cover"
                           />
                         ) : (
                           <Iniciais nome={produto.nome} />
@@ -405,9 +407,9 @@ export default function Produtos() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-stone-600">{produto.categoria ?? '—'}</td>
+                    <td className="px-5 py-4 text-sm text-stone-600">{produto.categoria ?? '—'}</td>
                     {PLATAFORMAS.map((p) => (
-                      <td key={p.chave} className="px-4 py-3">
+                      <td key={p.chave} className="px-5 py-4">
                         <CelulaPlataforma
                           produtoId={produto.id}
                           plataforma={p.chave}
@@ -416,11 +418,11 @@ export default function Produtos() {
                         />
                       </td>
                     ))}
-                    <td className="px-4 py-3 text-sm text-stone-600">{formatarPreco(produto.custoCentavos)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4 text-sm text-stone-600">{formatarPreco(produto.custoCentavos)}</td>
+                    <td className="px-5 py-4">
                       {margem != null ? (
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                             margem >= 50
                               ? 'bg-emerald-100 text-emerald-700'
                               : margem >= 20
@@ -434,13 +436,13 @@ export default function Produtos() {
                         <span className="text-sm text-stone-300">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
                           onClick={() => setModalProduto(produto)}
                           title="Editar"
-                          className="rounded p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+                          className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
                         >
                           <Pencil size={15} />
                         </button>
@@ -448,7 +450,7 @@ export default function Produtos() {
                           type="button"
                           onClick={() => setExcluindo(produto)}
                           title="Excluir"
-                          className="rounded p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600"
+                          className="rounded-lg p-2 text-stone-400 hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -475,24 +477,24 @@ export default function Produtos() {
 
       {excluindo && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg">
-            <h3 className="font-medium text-stone-900">Excluir "{excluindo.nome}"?</h3>
-            <p className="mt-1 text-sm text-stone-500">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-stone-900">Excluir "{excluindo.nome}"?</h3>
+            <p className="mt-1.5 text-sm text-stone-500">
               Remove o produto e todos os vínculos de plataforma daqui — não afeta os itens já cadastrados nas
               próprias plataformas.
             </p>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setExcluindo(null)}
-                className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
+                className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => confirmarExclusao(excluindo)}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700"
               >
                 Excluir
               </button>
