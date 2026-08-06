@@ -98,6 +98,30 @@ const STRATEGIES = {
   noventaenove: fetchNoventaENoveToken,
 };
 
+// Bug real já visto em produção: vários pedidos chegando quase juntos (ex:
+// 4 webhooks orderNew no mesmo segundo) cada um chamando getValidToken()
+// concorrentemente. Como o "refresh" da 99Food sempre gera um token NOVO
+// (invalidando o anterior), chamadas paralelas se pisavam — uma pegava um
+// token que a próxima já tinha invalidado, e a confirmação do pedido
+// falhava com "auth token is incorrect or has expired" mesmo dentro da
+// validade que a gente tinha registrado. Esse mapa garante que só existe
+// uma renovação em voo por plataforma; chamadas concorrentes esperam a
+// mesma promise em vez de cada uma disparar seu próprio refresh+get.
+// (Só protege dentro deste processo — múltiplas réplicas do serviço
+// rodando ao mesmo tempo ainda poderiam correr entre si; não é o caso hoje,
+// o serviço no Railway roda com 1 réplica.)
+const renovacoesEmAndamento = new Map();
+
+async function renovarToken(platform, fetchNewToken) {
+  const { token, expiresAt } = await fetchNewToken();
+  await prisma.platformToken.upsert({
+    where: { platform },
+    update: { token, expiresAt },
+    create: { platform, token, expiresAt },
+  });
+  return token;
+}
+
 /**
  * Retorna um token de acesso válido para a plataforma informada, renovando
  * automaticamente (e persistindo em `platform_tokens`) quando necessário.
@@ -119,15 +143,18 @@ async function getValidToken(platform) {
     return existing.token;
   }
 
-  const { token, expiresAt } = await fetchNewToken();
+  // Já tem uma renovação dessa plataforma em andamento? Espera ela em vez
+  // de disparar outra em paralelo.
+  if (renovacoesEmAndamento.has(platform)) {
+    return renovacoesEmAndamento.get(platform);
+  }
 
-  await prisma.platformToken.upsert({
-    where: { platform },
-    update: { token, expiresAt },
-    create: { platform, token, expiresAt },
+  const promise = renovarToken(platform, fetchNewToken).finally(() => {
+    renovacoesEmAndamento.delete(platform);
   });
+  renovacoesEmAndamento.set(platform, promise);
 
-  return token;
+  return promise;
 }
 
 module.exports = { getValidToken };
