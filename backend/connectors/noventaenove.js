@@ -104,6 +104,33 @@ async function despausarItem(appItemId) {
   return atualizarStatusItem(appItemId, ITEM_STATUS.DISPONIVEL);
 }
 
+/**
+ * Confirma um pedido novo. Urgente: a 99Food cancela automaticamente um
+ * pedido não confirmado em ~5 min (ver routes/webhooks.js, chamado logo
+ * após um evento orderNew).
+ * Doc: POST /v1/order/order/confirm
+ *
+ * Nome do campo (`order_id` no body) segue o padrão dos outros endpoints
+ * POST da 99Food — ainda não validado contra um pedido real de verdade,
+ * conferir no primeiro orderNew de produção.
+ */
+async function confirmarPedido(orderId) {
+  const params = await baseParams();
+  const { data } = await client.post('/v1/order/order/confirm', { order_id: orderId }, { params });
+  return data;
+}
+
+/**
+ * Busca o detalhe completo de um pedido — útil quando o payload do webhook
+ * não basta (reconciliação, consulta manual, etc.).
+ * Doc: GET /v1/order/order/detail
+ */
+async function detalheDoPedido(orderId) {
+  const params = await baseParams({ order_id: orderId });
+  const { data } = await client.get('/v1/order/order/detail', { params });
+  return data;
+}
+
 module.exports = {
   ITEM_STATUS,
   listarCardapio,
@@ -111,4 +138,6 @@ module.exports = {
   atualizarStatusItem,
   pausarItem,
   despausarItem,
+  confirmarPedido,
+  detalheDoPedido,
 };

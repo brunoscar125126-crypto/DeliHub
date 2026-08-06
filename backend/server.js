@@ -10,7 +10,18 @@ const { iniciarPolling } = require('./lib/ifoodPolling');
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(
+  express.json({
+    // Guarda o corpo bruto (Buffer) em req.rawBody — necessário pra: (1)
+    // verificar assinatura de webhooks exatamente como chegou, e (2)
+    // reparsear com json-bigint quando IDs de 64 bits estiverem em jogo
+    // (ver routes/webhooks.js). O parser padrão do Express usa JSON.parse,
+    // que perde precisão nesses casos.
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/produtos', produtosRouter);

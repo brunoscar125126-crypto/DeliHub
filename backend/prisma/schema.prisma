@@ -93,3 +93,28 @@ model EventoPedido {
 
   @@map("eventos_pedido")
 }
+
+// Pedido processado a partir de um evento orderNew (99Food, por enquanto —
+// campo `plataforma` já deixa espaço pra quando o iFood entrar aqui
+// também). shop/price/receiveAddress/orderItems ficam como Json porque
+// ainda não temos o sub-schema completo de cada um confirmado — payloadBruto
+// guarda o order_info inteiro como rede de segurança.
+model Pedido {
+  id             String    @id @default(cuid())
+  plataforma     String
+  // order_id da plataforma. 64-bit na 99Food — guardado como string pra não
+  // perder precisão (ver nota sobre json-bigint em routes/webhooks.js).
+  orderId        String
+  status         Int
+  shop           Json
+  price          Json
+  receiveAddress Json
+  orderItems     Json
+  payloadBruto   Json
+  confirmadoEm   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([plataforma, orderId])
+  @@map("pedidos")
+}
