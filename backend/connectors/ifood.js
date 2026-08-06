@@ -182,6 +182,18 @@ async function confirmarEventos(eventIds) {
   );
 }
 
+/**
+ * Busca o pedido completo — o evento de webhook/polling só traz
+ * id/code/orderId, não o pedido em si (itens, cliente, endereço,
+ * pagamento...). Testado contra um pedido real do Developer Portal.
+ * Doc: GET /order/v1.0/orders/{orderId}
+ */
+async function buscarPedido(orderId) {
+  const headers = await authHeaders();
+  const { data } = await axios.get(`${BASE_URL}/order/v1.0/orders/${orderId}`, { headers });
+  return data;
+}
+
 module.exports = {
   ITEM_STATUS,
   listarLojas,
@@ -195,4 +207,5 @@ module.exports = {
   despausarItem,
   buscarEventosPendentes,
   confirmarEventos,
+  buscarPedido,
 };
