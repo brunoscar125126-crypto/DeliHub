@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import Dashboard from './Dashboard.jsx';
 import Importacao from './Importacao.jsx';
+import HorarioFuncionamento from './HorarioFuncionamento.jsx';
 
 const ABAS = {
   dashboard: { label: 'Produtos', Componente: Dashboard },
   importacao: { label: 'Importar cardápio', Componente: Importacao },
+  horario: { label: 'Horário de funcionamento', Componente: HorarioFuncionamento },
 };
 
 export default function App() {

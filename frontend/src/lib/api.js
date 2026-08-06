@@ -24,4 +24,17 @@ export const api = {
   previewImportacao: (plataforma) => request(`/api/importacao/${plataforma}/preview`),
   confirmarImportacao: (itens) =>
     request('/api/importacao/confirmar', { method: 'POST', body: JSON.stringify({ itens }) }),
+
+  buscarHorario: () => request('/api/horario'),
+  salvarHorario: (plataforma, turnos) =>
+    request(`/api/horario/${plataforma}`, { method: 'PUT', body: JSON.stringify({ turnos }) }),
+  criarPausaIfood: ({ descricao, inicio, fim }) =>
+    request('/api/horario/ifood/pausa', { method: 'POST', body: JSON.stringify({ descricao, inicio, fim }) }),
+  cancelarPausaIfood: (interrupcaoId) =>
+    request(`/api/horario/ifood/pausa/${interrupcaoId}`, { method: 'DELETE' }),
+  criarPausaNoventaENove: ({ duracao, motivoCode, autoRetomar }) =>
+    request('/api/horario/noventaenove/pausa', {
+      method: 'POST',
+      body: JSON.stringify({ duracao, motivoCode, autoRetomar }),
+    }),
 };

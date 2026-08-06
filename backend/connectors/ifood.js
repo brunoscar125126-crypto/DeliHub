@@ -194,6 +194,75 @@ async function buscarPedido(orderId) {
   return data;
 }
 
+/**
+ * Busca o horário de funcionamento semanal atual.
+ * Doc: GET /merchant/v1.0/merchants/{merchantId}/opening-hours
+ * Retorna { storeId, shifts: [{ id, dayOfWeek, start, duration, ... }] }.
+ */
+async function buscarHorarioFuncionamento(merchantId) {
+  const headers = await authHeaders();
+  const { data } = await axios.get(`${BASE_URL}/merchant/v1.0/merchants/${merchantId}/opening-hours`, { headers });
+  return data;
+}
+
+/**
+ * Substitui o horário de funcionamento semanal inteiro (PUT = replace
+ * total, não parcial — testado ao vivo: manda de novo o horário atual sem
+ * mudar nada, e confirmado que aceita sem o campo `id` em cada shift,
+ * gerando IDs novos no servidor).
+ * Doc: PUT /merchant/v1.0/merchants/{merchantId}/opening-hours
+ *
+ * @param {Array<{dayOfWeek: string, start: string, duration: number}>} shifts
+ */
+async function atualizarHorarioFuncionamento(merchantId, shifts) {
+  const headers = await authHeaders();
+  const { data } = await axios.put(
+    `${BASE_URL}/merchant/v1.0/merchants/${merchantId}/opening-hours`,
+    { shifts },
+    { headers }
+  );
+  return data;
+}
+
+/**
+ * Lista as pausas (interrupções) ativas e futuras.
+ * Doc: GET /merchant/v1.0/merchants/{merchantId}/interruptions
+ */
+async function listarPausas(merchantId) {
+  const headers = await authHeaders();
+  const { data } = await axios.get(`${BASE_URL}/merchant/v1.0/merchants/${merchantId}/interruptions`, { headers });
+  return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Cria uma pausa (interrupção) com início/fim livres — diferente da
+ * 99Food, que só tem durações fixas. Datas em ISO 8601; o fuso enviado é
+ * ignorado pela API (usa sempre o fuso da loja).
+ * Doc: POST /merchant/v1.0/merchants/{merchantId}/interruptions
+ *
+ * @param {{ description: string, start: string, end: string }} pausa
+ */
+async function criarPausa(merchantId, { description, start, end }) {
+  const headers = await authHeaders();
+  const { data } = await axios.post(
+    `${BASE_URL}/merchant/v1.0/merchants/${merchantId}/interruptions`,
+    { description, start, end },
+    { headers }
+  );
+  return data;
+}
+
+/**
+ * Cancela uma pausa antes do fim previsto.
+ * Doc: DELETE /merchant/v1.0/merchants/{merchantId}/interruptions/{interruptionId}
+ */
+async function cancelarPausa(merchantId, interruptionId) {
+  const headers = await authHeaders();
+  await axios.delete(`${BASE_URL}/merchant/v1.0/merchants/${merchantId}/interruptions/${interruptionId}`, {
+    headers,
+  });
+}
+
 module.exports = {
   ITEM_STATUS,
   listarLojas,
@@ -208,4 +277,9 @@ module.exports = {
   buscarEventosPendentes,
   confirmarEventos,
   buscarPedido,
+  buscarHorarioFuncionamento,
+  atualizarHorarioFuncionamento,
+  listarPausas,
+  criarPausa,
+  cancelarPausa,
 };

@@ -131,8 +131,89 @@ async function detalheDoPedido(orderId) {
   return data;
 }
 
+// Duração da pausa (Business Pause) — enum, não minutos crus. Descoberto ao
+// vivo: a API rejeita qualquer valor fora de 1-4 com o range certinho no erro.
+const PAUSA_DURACAO = {
+  MIN_10: 1,
+  MIN_20: 2,
+  MIN_30: 3,
+  ATE_FIM_DO_DIA: 4,
+};
+
+// Motivos de pausa (pause_reason_code) — confirmados pelo lojista via
+// documentação da 99Food. Só temos esses dois por enquanto; lista completa
+// não confirmada.
+const PAUSA_MOTIVO = {
+  AUSENCIA_TEMPORARIA_EQUIPE: 1002,
+  OUTROS: 1006,
+};
+
+// store_status — usado tanto na resposta de shop/shop/detail quanto no
+// corpo de shop/shop/setStatus.
+const LOJA_STATUS = {
+  ABERTA: 1,
+  FECHADA: 2, // "Business Close" — fica fechada até reabertura manual (API ou app)
+  PAUSADA: 3, // "Business Pause" — preserva horário agendado, pode voltar sozinha
+};
+
+/**
+ * Busca os detalhes completos da loja: horário semanal (biz_day_time),
+ * feriados/exceções (biz_holiday_time), status atual (store_status), etc.
+ * Doc: GET /v1/shop/shop/detail
+ *
+ * Rate limit observado ao vivo: 1 chamada a cada 60s (errno 10005) —
+ * parece compartilhado com shop/shop/update e shop/shop/setStatus (mesmo
+ * grupo "shop"). routes/horario.js não faz polling automático por causa
+ * disso, só busca sob ação explícita do usuário.
+ */
+async function detalheLoja() {
+  const params = await baseParams();
+  const { data } = await client.get('/v1/shop/shop/detail', { params });
+  return data;
+}
+
+/**
+ * Atualiza campos da loja — é atualização PARCIAL (confirmado ao vivo,
+ * `auth_token` é o único campo realmente obrigatório): manda só o que
+ * quer mudar, sem precisar reenviar o resto.
+ * Doc: POST /v1/shop/shop/update
+ *
+ * Pra horário (`biz_day_time`/`biz_holiday_time`): ATENÇÃO, o formato de
+ * escrita usa `bizDay`/`bizTime`/`bizHoliday`/`restAllDay` (camelCase),
+ * diferente do formato de leitura de shop/shop/detail, que usa
+ * `biz_day`/`biz_time` (snake_case) — descoberto ao vivo depois de várias
+ * tentativas com o formato de leitura, que falhava com "Date or time
+ * cannot be blank". Use lib/horarioFuncionamento.js pra montar o payload
+ * certo em vez de montar isso na mão.
+ */
+async function atualizarHorario(dados) {
+  const params = await baseParams();
+  const { data } = await client.post('/v1/shop/shop/update', dados, { params });
+  return data;
+}
+
+/**
+ * Muda o status da loja: pausa temporária (com retorno automático
+ * opcional) ou fechamento manual.
+ * Doc: POST /v1/shop/shop/setStatus
+ *
+ * Pra pausar: { store_status: LOJA_STATUS.PAUSADA, pause_time: PAUSA_DURACAO.*,
+ * pause_reason_code: PAUSA_MOTIVO.*, auto_switch: 2 } — os quatro campos
+ * são obrigatórios juntos ao pausar (confirmado ao vivo: pause_time fora de
+ * 1-4 e pause_reason_code fora do formato numérico esperado geram erro
+ * explícito da API).
+ */
+async function definirStatusLoja(dados) {
+  const params = await baseParams();
+  const { data } = await client.post('/v1/shop/shop/setStatus', dados, { params });
+  return data;
+}
+
 module.exports = {
   ITEM_STATUS,
+  PAUSA_DURACAO,
+  PAUSA_MOTIVO,
+  LOJA_STATUS,
   listarCardapio,
   atualizarItem,
   atualizarStatusItem,
@@ -140,4 +221,7 @@ module.exports = {
   despausarItem,
   confirmarPedido,
   detalheDoPedido,
+  detalheLoja,
+  atualizarHorario,
+  definirStatusLoja,
 };

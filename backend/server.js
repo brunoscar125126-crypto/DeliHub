@@ -5,6 +5,7 @@ const cors = require('cors');
 const produtosRouter = require('./routes/produtos');
 const importacaoRouter = require('./routes/importacao');
 const webhooksRouter = require('./routes/webhooks');
+const horarioRouter = require('./routes/horario');
 const { iniciarPolling } = require('./lib/ifoodPolling');
 
 const app = express();
@@ -27,6 +28,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/produtos', produtosRouter);
 app.use('/api/importacao', importacaoRouter);
 app.use('/api/webhooks', webhooksRouter);
+app.use('/api/horario', horarioRouter);
 
 // Error handler global — captura tanto erros síncronos quanto os
 // encaminhados via asyncHandler (lib/asyncHandler.js) nas rotas.
