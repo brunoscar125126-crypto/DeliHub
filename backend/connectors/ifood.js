@@ -152,6 +152,36 @@ async function despausarItem(merchantId, itemId) {
   return atualizarStatusItem(merchantId, itemId, ITEM_STATUS.DISPONIVEL);
 }
 
+/**
+ * O iFood não empurra pedido pra nenhuma URL — é o contrário: a Events API
+ * exige que A GENTE puxe periodicamente (polling, ~30s recomendado) e depois
+ * confirme o recebimento. Não existe "webhook de pedido" configurável no
+ * painel do iFood pra esse fluxo.
+ * Doc: GET /events/v1.0/events:polling
+ */
+async function buscarEventosPendentes() {
+  const headers = await authHeaders();
+  const { data } = await axios.get(`${BASE_URL}/events/v1.0/events:polling`, { headers });
+  // Sem eventos pendentes, a API responde 204/corpo vazio (string vazia via
+  // axios, não null/undefined) — normaliza tudo que não for array pra [].
+  return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Confirma o recebimento de eventos (obrigatório, senão o iFood reenvia).
+ * Doc: POST /events/v1.0/events/acknowledgment
+ * Body esperado: array de { id: eventId }.
+ */
+async function confirmarEventos(eventIds) {
+  if (!eventIds?.length) return;
+  const headers = await authHeaders();
+  await axios.post(
+    `${BASE_URL}/events/v1.0/events/acknowledgment`,
+    eventIds.map((id) => ({ id })),
+    { headers }
+  );
+}
+
 module.exports = {
   ITEM_STATUS,
   listarLojas,
@@ -163,4 +193,6 @@ module.exports = {
   atualizarStatusItem,
   pausarItem,
   despausarItem,
+  buscarEventosPendentes,
+  confirmarEventos,
 };

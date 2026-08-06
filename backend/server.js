@@ -4,6 +4,8 @@ const express = require('express');
 const cors = require('cors');
 const produtosRouter = require('./routes/produtos');
 const importacaoRouter = require('./routes/importacao');
+const webhooksRouter = require('./routes/webhooks');
+const { iniciarPolling } = require('./lib/ifoodPolling');
 
 const app = express();
 
@@ -13,6 +15,7 @@ app.use(express.json());
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/produtos', produtosRouter);
 app.use('/api/importacao', importacaoRouter);
+app.use('/api/webhooks', webhooksRouter);
 
 // Error handler global — captura tanto erros síncronos quanto os
 // encaminhados via asyncHandler (lib/asyncHandler.js) nas rotas.
@@ -24,4 +27,5 @@ app.use((err, _req, res, _next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`DeliHub backend rodando na porta ${PORT}`);
+  iniciarPolling();
 });

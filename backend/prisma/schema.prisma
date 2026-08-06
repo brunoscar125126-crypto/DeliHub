@@ -77,3 +77,19 @@ model ProdutoPlataforma {
   @@unique([plataforma, itemId])
   @@map("produto_plataformas")
 }
+
+// Guarda o payload BRUTO de todo evento de pedido recebido (webhook da
+// 99Food) ou coletado (polling do iFood). Nenhuma das duas plataformas tem
+// o formato do payload confirmado ainda neste projeto — esta tabela é a
+// fonte de verdade pra descobrir o formato real assim que o primeiro evento
+// chegar, em vez de assumir um schema às cegas.
+model EventoPedido {
+  id         String   @id @default(cuid())
+  plataforma String // "ifood" | "noventaenove"
+  origem     String // "webhook" | "polling"
+  payload    Json
+  processado Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@map("eventos_pedido")
+}
