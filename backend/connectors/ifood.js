@@ -153,10 +153,10 @@ async function despausarItem(merchantId, itemId) {
 }
 
 /**
- * O iFood não empurra pedido pra nenhuma URL — é o contrário: a Events API
- * exige que A GENTE puxe periodicamente (polling, ~30s recomendado) e depois
- * confirme o recebimento. Não existe "webhook de pedido" configurável no
- * painel do iFood pra esse fluxo.
+ * Um dos dois jeitos de receber eventos da Events API do iFood (o outro é
+ * webhook — ver routes/webhooks.js:/ifood — os dois ficam ativos ao mesmo
+ * tempo neste projeto por enquanto). Aqui A GENTE puxa periodicamente
+ * (polling, ~30s recomendado pela doc) e depois confirma o recebimento.
  * Doc: GET /events/v1.0/events:polling
  */
 async function buscarEventosPendentes() {
