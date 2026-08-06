@@ -54,6 +54,142 @@ router.get(
 );
 
 /**
+ * PATCH /api/produtos/:id — edita os campos base do produto (não mexe em
+ * plataformas — isso é PATCH/DELETE /:id/plataformas/:plataforma).
+ * Body: qualquer subconjunto de { nome, descricao, categoria,
+ *       precoCentavos, custoCentavos, imagemUrl }
+ */
+router.patch(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const { nome, descricao, categoria, precoCentavos, custoCentavos, imagemUrl } = req.body;
+
+    const data = {};
+    if (nome !== undefined) data.nome = nome;
+    if (descricao !== undefined) data.descricao = descricao;
+    if (categoria !== undefined) data.categoria = categoria;
+    if (precoCentavos !== undefined) data.precoCentavos = precoCentavos;
+    if (custoCentavos !== undefined) data.custoCentavos = custoCentavos;
+    if (imagemUrl !== undefined) data.imagemUrl = imagemUrl;
+
+    try {
+      const produto = await prisma.produto.update({
+        where: { id: req.params.id },
+        data,
+        include: { plataformas: true },
+      });
+      res.json(produto);
+    } catch (err) {
+      if (err.code === 'P2025') return res.status(404).json({ error: 'Produto não encontrado' });
+      throw err;
+    }
+  })
+);
+
+/** DELETE /api/produtos/:id — exclui o produto (cascade remove os vínculos de plataforma). */
+router.delete(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    try {
+      await prisma.produto.delete({ where: { id: req.params.id } });
+      res.status(204).end();
+    } catch (err) {
+      if (err.code === 'P2025') return res.status(404).json({ error: 'Produto não encontrado' });
+      throw err;
+    }
+  })
+);
+
+/**
+ * PATCH /api/produtos/:id/plataformas/:plataforma — vincula (se ainda não
+ * existe) ou pausa/despausa (se já vinculado) um produto numa única
+ * plataforma. Diferente do fan-out de /pausar e /despausar, que mexe em
+ * todas de uma vez — aqui é só a plataforma da URL.
+ *
+ * Body pra VINCULAR (sem vínculo ainda): { itemId, precoCentavos? }
+ * Body pra PAUSAR/DESPAUSAR (já vinculado): { status: 'ATIVO' | 'PAUSADO' }
+ */
+router.patch(
+  '/:id/plataformas/:plataforma',
+  asyncHandler(async (req, res) => {
+    const { id, plataforma } = req.params;
+    const { itemId, precoCentavos, status } = req.body;
+
+    const produto = await prisma.produto.findUnique({ where: { id }, include: { plataformas: true } });
+    if (!produto) return res.status(404).json({ error: 'Produto não encontrado' });
+
+    const vinculoAtual = produto.plataformas.find((pp) => pp.plataforma === plataforma);
+
+    // Caso 1: ainda não vinculado — precisa de itemId pra criar o vínculo.
+    if (!vinculoAtual) {
+      if (!itemId) {
+        return res.status(400).json({ error: 'itemId é obrigatório pra vincular uma plataforma nova' });
+      }
+      try {
+        const novoVinculo = await prisma.produtoPlataforma.create({
+          data: { produtoId: id, plataforma, itemId, precoCentavos },
+        });
+        return res.status(201).json(novoVinculo);
+      } catch (err) {
+        if (err.code === 'P2002') {
+          return res.status(409).json({ error: 'Esse itemId já está vinculado a outro produto nessa plataforma' });
+        }
+        throw err;
+      }
+    }
+
+    // Caso 2: já vinculado — muda status (pausa/despausa só nessa plataforma).
+    if (status) {
+      const conector = CONECTORES[plataforma];
+      if (!conector) return res.status(400).json({ error: `Nenhum conector disponível para "${plataforma}"` });
+
+      const acao = status === 'PAUSADO' ? 'pausar' : 'despausar';
+      try {
+        await conector[acao](vinculoAtual.itemId);
+      } catch (err) {
+        return res.status(502).json({ error: `Falha ao ${acao} na plataforma: ${err.message}` });
+      }
+
+      const atualizado = await prisma.produtoPlataforma.update({
+        where: { id: vinculoAtual.id },
+        data: { status, sincronizadoEm: new Date() },
+      });
+      return res.json(atualizado);
+    }
+
+    // Nem itemId (já vinculado, então não se aplica) nem status no body.
+    if (precoCentavos !== undefined) {
+      const atualizado = await prisma.produtoPlataforma.update({
+        where: { id: vinculoAtual.id },
+        data: { precoCentavos },
+      });
+      return res.json(atualizado);
+    }
+
+    res.status(400).json({ error: 'Nada pra atualizar — informe status ou precoCentavos' });
+  })
+);
+
+/**
+ * DELETE /api/produtos/:id/plataformas/:plataforma — desvincula (remove só
+ * o mapeamento local). Não chama a plataforma — o item real lá continua
+ * como está, só paramos de gerenciá-lo por aqui.
+ */
+router.delete(
+  '/:id/plataformas/:plataforma',
+  asyncHandler(async (req, res) => {
+    const { id, plataforma } = req.params;
+    const vinculo = await prisma.produtoPlataforma.findUnique({
+      where: { produtoId_plataforma: { produtoId: id, plataforma } },
+    });
+    if (!vinculo) return res.status(404).json({ error: 'Vínculo não encontrado' });
+
+    await prisma.produtoPlataforma.delete({ where: { id: vinculo.id } });
+    res.status(204).end();
+  })
+);
+
+/**
  * POST /api/produtos — cria um produto, opcionalmente já com os
  * mapeamentos de plataforma.
  * Body: { nome, descricao?, precoCentavos, externalCode?,

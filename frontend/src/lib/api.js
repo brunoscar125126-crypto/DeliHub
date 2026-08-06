@@ -19,8 +19,16 @@ async function request(path, options = {}) {
 export const api = {
   listarProdutos: () => request('/api/produtos'),
   criarProduto: (produto) => request('/api/produtos', { method: 'POST', body: JSON.stringify(produto) }),
+  atualizarProduto: (id, dados) => request(`/api/produtos/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
+  excluirProduto: (id) => request(`/api/produtos/${id}`, { method: 'DELETE' }),
   pausarProduto: (id) => request(`/api/produtos/${id}/pausar`, { method: 'POST' }),
   despausarProduto: (id) => request(`/api/produtos/${id}/despausar`, { method: 'POST' }),
+  // Vincular (com itemId) ou pausar/despausar (com status) uma única plataforma de um produto.
+  atualizarPlataformaProduto: (id, plataforma, dados) =>
+    request(`/api/produtos/${id}/plataformas/${plataforma}`, { method: 'PATCH', body: JSON.stringify(dados) }),
+  removerPlataformaProduto: (id, plataforma) =>
+    request(`/api/produtos/${id}/plataformas/${plataforma}`, { method: 'DELETE' }),
+  listarPedidos: () => request('/api/webhooks/pedidos'),
   previewImportacao: (plataforma) => request(`/api/importacao/${plataforma}/preview`),
   confirmarImportacao: (itens) =>
     request('/api/importacao/confirmar', { method: 'POST', body: JSON.stringify({ itens }) }),

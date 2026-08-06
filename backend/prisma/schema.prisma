@@ -32,7 +32,14 @@ model Produto {
   id            String        @id @default(cuid())
   nome          String
   descricao     String?
+  categoria     String?
   precoCentavos Int
+  // Custo de produção — opcional; a margem exibida no dashboard só aparece
+  // quando isso está preenchido (não inventamos margem sem custo real).
+  custoCentavos Int?
+  // Se ausente, o frontend mostra um círculo colorido com a inicial do nome
+  // em vez da imagem — não há upload de imagem neste projeto ainda.
+  imagemUrl     String?
   // Código PDV interno — referência única do produto, pensado para o
   // matching/merge entre plataformas no onboarding do futuro SaaS.
   externalCode  String?       @unique

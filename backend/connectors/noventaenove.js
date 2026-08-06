@@ -81,6 +81,13 @@ async function atualizarItem(item) {
  * Muda o status de disponibilidade de um item (pausar/despausar).
  * Doc: POST /v1/item/item/updateItemStatus
  *
+ * A 99Food embute erro dentro de uma resposta HTTP 200 normal (envelope
+ * {errno, errmsg}) — o axios não lança nada sozinho nesse caso. Descoberto
+ * ao vivo: um app_item_id inexistente retornava como se tivesse funcionado
+ * pra quem só checava "a chamada não deu throw". Lança explicitamente aqui
+ * pra todo caller (fan-out em routes/produtos.js, toggle por plataforma,
+ * etc.) herdar a checagem certa sem precisar lembrar de fazer isso.
+ *
  * @param {string} appItemId - o `app_item_id` retornado por listarCardapio()
  * @param {1 | 2} status - use ITEM_STATUS.DISPONIVEL ou ITEM_STATUS.PAUSADO
  */
@@ -91,6 +98,9 @@ async function atualizarStatusItem(appItemId, status) {
     { app_item_id: appItemId, status },
     { params }
   );
+  if (data.errno !== 0) {
+    throw new Error(`Falha ao atualizar status do item na 99Food [errno ${data.errno}]: ${data.errmsg}`);
+  }
   return data;
 }
 

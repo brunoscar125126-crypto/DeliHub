@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { api } from './lib/api.js';
+import { api } from '../lib/api.js';
 
 const PLATAFORMA_LABEL = { noventaenove: '99Food', ifood: 'iFood' };
 
@@ -8,7 +8,7 @@ function formatarPreco(centavos) {
   return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export default function Importacao() {
+export default function Cardapio() {
   const [plataforma, setPlataforma] = useState('noventaenove');
   const [itens, setItens] = useState([]);
   const [produtosExistentes, setProdutosExistentes] = useState([]);
@@ -20,8 +20,8 @@ export default function Importacao() {
   const [resultado, setResultado] = useState(null);
 
   // Sem auto-fetch em useEffect de propósito: o preview da 99Food tem rate
-  // limit de 2 chamadas/120s (ver lib/importacao.js) — só busca sob clique
-  // explícito do usuário.
+  // limit de 2 chamadas/120s (ver backend/lib/importacao.js) — só busca sob
+  // clique explícito do usuário.
   const buscar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
@@ -83,24 +83,24 @@ export default function Importacao() {
   const selecionadosCount = Object.values(selecionados).filter(Boolean).length;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="p-8">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">Importar cardápio</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-semibold text-stone-900">Cardápio</h1>
+        <p className="mt-1 text-sm text-stone-500">
           Puxa os produtos já existentes numa plataforma. Você decide, item a item: criar produto novo ou mesclar com
           um que já foi importado de outra plataforma.
         </p>
       </header>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-md border border-slate-300 p-1">
+        <div className="inline-flex rounded-md border border-stone-300 p-1">
           {Object.entries(PLATAFORMA_LABEL).map(([valor, label]) => (
             <button
               key={valor}
               type="button"
               onClick={() => setPlataforma(valor)}
               className={`rounded px-3 py-1 text-sm font-medium transition ${
-                plataforma === valor ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+                plataforma === valor ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
               }`}
             >
               {label}
@@ -112,7 +112,7 @@ export default function Importacao() {
           type="button"
           onClick={buscar}
           disabled={carregando}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+          className="rounded-md bg-orange-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
         >
           {carregando ? 'Buscando...' : 'Buscar cardápio'}
         </button>
@@ -132,7 +132,7 @@ export default function Importacao() {
       {erro && <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>}
 
       {resultado && (
-        <div className="mt-4 space-y-1 rounded-md bg-slate-50 px-4 py-3 text-sm">
+        <div className="mt-4 space-y-1 rounded-md bg-stone-100 px-4 py-3 text-sm">
           {resultado.map((r) => (
             <p key={r.itemId} className={r.sucesso ? 'text-emerald-700' : 'text-red-700'}>
               {r.itemId}:{' '}
@@ -147,7 +147,7 @@ export default function Importacao() {
       )}
 
       {itens.length > 0 && (
-        <div className="mt-6 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+        <div className="mt-6 divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white">
           {itens.map((item) => (
             <div key={item.itemId} className="flex items-center gap-3 px-4 py-3">
               <input
@@ -155,25 +155,25 @@ export default function Importacao() {
                 checked={!!selecionados[item.itemId]}
                 disabled={item.jaImportado}
                 onChange={() => alternarSelecao(item.itemId)}
-                className="h-4 w-4 shrink-0 rounded border-slate-300 disabled:opacity-40"
+                className="h-4 w-4 shrink-0 rounded border-stone-300 disabled:opacity-40"
               />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-900">{item.nome}</p>
-                <p className="text-xs text-slate-500">{formatarPreco(item.precoCentavos)}</p>
+                <p className="truncate text-sm font-medium text-stone-900">{item.nome}</p>
+                <p className="text-xs text-stone-500">{formatarPreco(item.precoCentavos)}</p>
                 {item.sugestaoMatchId && !item.jaImportado && (
                   <p className="text-[11px] text-amber-600">produto parecido já existe — sugestão pré-selecionada</p>
                 )}
               </div>
 
               {item.jaImportado ? (
-                <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-500">
+                <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-stone-500">
                   Já importado
                 </span>
               ) : (
                 <select
                   value={escolhas[item.itemId] ?? ''}
                   onChange={(e) => mudarEscolha(item.itemId, e.target.value)}
-                  className="shrink-0 rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-700"
+                  className="shrink-0 rounded-md border border-stone-300 px-2 py-1 text-xs text-stone-700"
                 >
                   <option value="">Criar produto novo</option>
                   {produtosExistentes.map((p) => (
@@ -189,7 +189,7 @@ export default function Importacao() {
       )}
 
       {!carregando && itens.length === 0 && !erro && (
-        <p className="mt-8 text-sm text-slate-500">
+        <p className="mt-8 text-sm text-stone-500">
           Clique em &quot;Buscar cardápio&quot; pra ver os produtos dessa plataforma.
         </p>
       )}

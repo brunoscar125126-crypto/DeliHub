@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api } from './lib/api.js';
+import { api } from '../lib/api.js';
 
 const DIAS = ['SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO', 'DOMINGO'];
 const DIA_LABEL = {
@@ -11,6 +11,7 @@ const DIA_LABEL = {
   SABADO: 'Sábado',
   DOMINGO: 'Domingo',
 };
+const PLATAFORMA_LABEL = { ifood: 'iFood', noventaenove: '99Food' };
 
 // 99Food: pause_time é enum, não minutos crus (confirmado ao vivo).
 const DURACOES_99FOOD = [
@@ -43,7 +44,7 @@ function porDiaParaTurnos(porDia) {
   return turnos;
 }
 
-/** Grade semanal editável — usada tanto pro iFood quanto pra 99Food, cada uma com seu próprio estado. */
+/** Grade semanal editável — reaproveitada tanto no editor único quanto na customização por plataforma. */
 function GradeSemanal({ turnos, editando, onChange }) {
   const porDia = turnosParaPorDia(turnos);
 
@@ -66,9 +67,9 @@ function GradeSemanal({ turnos, editando, onChange }) {
     <div className="space-y-1.5">
       {DIAS.map((dia) => (
         <div key={dia} className="flex items-start gap-2 text-sm">
-          <span className="w-16 shrink-0 pt-1 text-slate-500">{DIA_LABEL[dia]}</span>
+          <span className="w-16 shrink-0 pt-1 text-stone-500">{DIA_LABEL[dia]}</span>
           <div className="flex-1 space-y-1">
-            {porDia[dia].length === 0 && <span className="text-slate-400">Fechado</span>}
+            {porDia[dia].length === 0 && <span className="text-stone-400">Fechado</span>}
             {porDia[dia].map((faixa, i) =>
               editando ? (
                 <div key={i} className="flex items-center gap-1.5">
@@ -76,14 +77,14 @@ function GradeSemanal({ turnos, editando, onChange }) {
                     type="time"
                     value={faixa.inicio}
                     onChange={(e) => atualizarFaixa(dia, i, 'inicio', e.target.value)}
-                    className="rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                    className="rounded border border-stone-300 px-1.5 py-0.5 text-xs"
                   />
-                  <span className="text-slate-400">–</span>
+                  <span className="text-stone-400">–</span>
                   <input
                     type="time"
                     value={faixa.fim}
                     onChange={(e) => atualizarFaixa(dia, i, 'fim', e.target.value)}
-                    className="rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                    className="rounded border border-stone-300 px-1.5 py-0.5 text-xs"
                   />
                   <button
                     type="button"
@@ -94,7 +95,7 @@ function GradeSemanal({ turnos, editando, onChange }) {
                   </button>
                 </div>
               ) : (
-                <span key={i} className="block text-slate-700">
+                <span key={i} className="block text-stone-700">
                   {faixa.inicio} – {faixa.fim}
                 </span>
               )
@@ -103,7 +104,7 @@ function GradeSemanal({ turnos, editando, onChange }) {
               <button
                 type="button"
                 onClick={() => adicionarFaixa(dia)}
-                className="text-xs text-slate-500 hover:text-slate-700"
+                className="text-xs text-stone-500 hover:text-stone-700"
               >
                 + adicionar turno
               </button>
@@ -147,26 +148,26 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
       <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-lg">
-        <h3 className="font-medium text-slate-900">Pausar {plataforma === 'ifood' ? 'iFood' : '99Food'}</h3>
+        <h3 className="font-medium text-stone-900">Pausar {PLATAFORMA_LABEL[plataforma]}</h3>
 
         {plataforma === 'ifood' ? (
           <div className="mt-3 space-y-3">
             <label className="block text-sm">
-              <span className="text-slate-600">Motivo (opcional)</span>
+              <span className="text-stone-600">Motivo (opcional)</span>
               <input
                 type="text"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
                 placeholder="Ex: falta de entregador"
               />
             </label>
             <label className="block text-sm">
-              <span className="text-slate-600">Duração</span>
+              <span className="text-stone-600">Duração</span>
               <select
                 value={minutos}
                 onChange={(e) => setMinutos(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
               >
                 <option value={15}>15 minutos</option>
                 <option value={30}>30 minutos</option>
@@ -178,11 +179,11 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
         ) : (
           <div className="mt-3 space-y-3">
             <label className="block text-sm">
-              <span className="text-slate-600">Duração</span>
+              <span className="text-stone-600">Duração</span>
               <select
                 value={duracao}
                 onChange={(e) => setDuracao(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
               >
                 {DURACOES_99FOOD.map((d) => (
                   <option key={d.valor} value={d.valor}>
@@ -192,11 +193,11 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-slate-600">Motivo (obrigatório)</span>
+              <span className="text-stone-600">Motivo (obrigatório)</span>
               <select
                 value={motivoCode}
                 onChange={(e) => setMotivoCode(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm"
               >
                 {MOTIVOS_99FOOD.map((m) => (
                   <option key={m.valor} value={m.valor}>
@@ -205,7 +206,7 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-stone-600">
               <input type="checkbox" checked={autoRetomar} onChange={(e) => setAutoRetomar(e.target.checked)} />
               Retomar automaticamente depois da pausa
             </label>
@@ -218,7 +219,7 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
           <button
             type="button"
             onClick={onFechar}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+            className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
           >
             Cancelar
           </button>
@@ -236,8 +237,8 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
   );
 }
 
-/** Painel de uma plataforma: grade semanal + botões de editar/salvar/pausar. */
-function PainelPlataforma({ label, plataforma, turnos, erro, onSalvo }) {
+/** Painel de customização individual de uma plataforma — pra quando o horário único não serve pra ela. */
+function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState(turnos);
   const [salvando, setSalvando] = useState(false);
@@ -263,9 +264,9 @@ function PainelPlataforma({ label, plataforma, turnos, erro, onSalvo }) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="rounded-lg border border-stone-200 bg-white p-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-medium text-slate-900">{label}</h2>
+        <h3 className="font-medium text-stone-900">{PLATAFORMA_LABEL[plataforma]}</h3>
         <div className="flex gap-2">
           {editando ? (
             <>
@@ -275,7 +276,7 @@ function PainelPlataforma({ label, plataforma, turnos, erro, onSalvo }) {
                   setEditando(false);
                   setRascunho(turnos);
                 }}
-                className="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-100"
+                className="rounded-md border border-stone-300 px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-100"
               >
                 Cancelar
               </button>
@@ -283,7 +284,7 @@ function PainelPlataforma({ label, plataforma, turnos, erro, onSalvo }) {
                 type="button"
                 onClick={salvar}
                 disabled={salvando}
-                className="rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                className="rounded-md bg-stone-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-stone-700 disabled:opacity-50"
               >
                 {salvando ? 'Salvando...' : 'Salvar horário'}
               </button>
@@ -300,9 +301,9 @@ function PainelPlataforma({ label, plataforma, turnos, erro, onSalvo }) {
               <button
                 type="button"
                 onClick={() => setEditando(true)}
-                className="rounded-md border border-slate-300 px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-100"
+                className="rounded-md border border-stone-300 px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-100"
               >
-                Editar horário
+                Customizar
               </button>
             </>
           )}
@@ -330,16 +331,26 @@ function PainelPlataforma({ label, plataforma, turnos, erro, onSalvo }) {
   );
 }
 
-export default function HorarioFuncionamento() {
+export default function Configuracoes() {
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
+
+  const [turnosUnificados, setTurnosUnificados] = useState([]);
+  const [aplicarEm, setAplicarEm] = useState({ ifood: true, noventaenove: true });
+  const [salvandoUnificado, setSalvandoUnificado] = useState(false);
+  const [resultadoUnificado, setResultadoUnificado] = useState(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
     try {
-      setDados(await api.buscarHorario());
+      const resposta = await api.buscarHorario();
+      setDados(resposta);
+      // Pré-preenche o editor único com o horário do iFood como ponto de
+      // partida (é só uma sugestão editável, não precisa bater com nenhuma
+      // plataforma especificamente).
+      setTurnosUnificados(resposta.ifood.turnos.length ? resposta.ifood.turnos : resposta.noventaenove.turnos);
     } catch (err) {
       setErro(err.message);
     } finally {
@@ -351,17 +362,42 @@ export default function HorarioFuncionamento() {
     carregar();
   }, [carregar]);
 
+  async function salvarUnificado() {
+    const plataformasMarcadas = Object.entries(aplicarEm)
+      .filter(([, marcado]) => marcado)
+      .map(([plataforma]) => plataforma);
+
+    if (plataformasMarcadas.length === 0) return;
+
+    setSalvandoUnificado(true);
+    setResultadoUnificado(null);
+    try {
+      const execucoes = await Promise.allSettled(
+        plataformasMarcadas.map((plataforma) => api.salvarHorario(plataforma, turnosUnificados))
+      );
+      const resultado = plataformasMarcadas.map((plataforma, i) => ({
+        plataforma,
+        sucesso: execucoes[i].status === 'fulfilled',
+        erro: execucoes[i].status === 'rejected' ? execucoes[i].reason.message : null,
+      }));
+      setResultadoUnificado(resultado);
+      await carregar();
+    } finally {
+      setSalvandoUnificado(false);
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="p-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Horário de funcionamento</h1>
-          <p className="mt-1 text-sm text-slate-500">Horário semanal e pausas rápidas, por plataforma</p>
+          <h1 className="text-2xl font-semibold text-stone-900">Configurações</h1>
+          <p className="mt-1 text-sm text-stone-500">Horário de funcionamento e pausas</p>
         </div>
         <button
           type="button"
           onClick={carregar}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+          className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
         >
           Atualizar
         </button>
@@ -370,25 +406,75 @@ export default function HorarioFuncionamento() {
       {erro && <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>}
 
       {carregando ? (
-        <p className="mt-8 text-sm text-slate-500">Carregando...</p>
+        <p className="mt-8 text-sm text-stone-500">Carregando...</p>
       ) : (
         dados && (
-          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <PainelPlataforma
-              label="iFood"
-              plataforma="ifood"
-              turnos={dados.ifood.turnos}
-              erro={dados.ifood.erro}
-              onSalvo={carregar}
-            />
-            <PainelPlataforma
-              label="99Food"
-              plataforma="noventaenove"
-              turnos={dados.noventaenove.turnos}
-              erro={dados.noventaenove.erro}
-              onSalvo={carregar}
-            />
-          </div>
+          <>
+            <section className="mt-6 rounded-lg border border-stone-200 bg-white p-4">
+              <h2 className="font-medium text-stone-900">Horário semanal</h2>
+              <p className="mt-1 text-sm text-stone-500">
+                Edite uma vez e aplique nas plataformas marcadas abaixo. Plataforma desmarcada mantém o horário atual
+                dela — customize individualmente na seção abaixo, se precisar.
+              </p>
+
+              <div className="mt-4">
+                <GradeSemanal turnos={turnosUnificados} editando onChange={setTurnosUnificados} />
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-stone-100 pt-4">
+                <span className="text-sm text-stone-600">Aplicar em:</span>
+                {Object.keys(PLATAFORMA_LABEL).map((plataforma) => (
+                  <label key={plataforma} className="flex items-center gap-1.5 text-sm text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={aplicarEm[plataforma]}
+                      onChange={(e) => setAplicarEm((prev) => ({ ...prev, [plataforma]: e.target.checked }))}
+                    />
+                    {PLATAFORMA_LABEL[plataforma]}
+                  </label>
+                ))}
+                <button
+                  type="button"
+                  onClick={salvarUnificado}
+                  disabled={salvandoUnificado || Object.values(aplicarEm).every((v) => !v)}
+                  className="ml-auto rounded-md bg-orange-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {salvandoUnificado ? 'Salvando...' : 'Salvar horário'}
+                </button>
+              </div>
+
+              {resultadoUnificado && (
+                <div className="mt-3 space-y-1">
+                  {resultadoUnificado.map((r) => (
+                    <p
+                      key={r.plataforma}
+                      className={`text-xs ${r.sucesso ? 'text-emerald-600' : 'text-red-600'}`}
+                    >
+                      {PLATAFORMA_LABEL[r.plataforma]}: {r.sucesso ? 'salvo com sucesso' : r.erro}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="mt-8">
+              <h2 className="text-sm font-medium text-stone-700">Customizar por plataforma</h2>
+              <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <PainelPersonalizado
+                  plataforma="ifood"
+                  turnos={dados.ifood.turnos}
+                  erro={dados.ifood.erro}
+                  onSalvo={carregar}
+                />
+                <PainelPersonalizado
+                  plataforma="noventaenove"
+                  turnos={dados.noventaenove.turnos}
+                  erro={dados.noventaenove.erro}
+                  onSalvo={carregar}
+                />
+              </div>
+            </section>
+          </>
         )
       )}
     </div>
