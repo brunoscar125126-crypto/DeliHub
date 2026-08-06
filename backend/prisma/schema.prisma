@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Guarda o token de acesso vigente de cada plataforma (iFood, 99Food, Keeta...).
+// lib/tokenManager.js é o único lugar do sistema que lê/escreve nesta tabela.
+model PlatformToken {
+  id        String   @id @default(cuid())
+  platform  String   @unique // "ifood" | "noventaenove" | "keeta"
+  token     String   @db.Text
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_tokens")
+}
+
+enum StatusProduto {
+  ATIVO
+  PAUSADO
+}
+
+// Produto "canônico" do sistema — a fonte de verdade interna, independente
+// de plataforma. nome/descricao/precoCentavos são os valores base; cada
+// plataforma pode ter seu próprio preço/status via ProdutoPlataforma.
+model Produto {
+  id            String        @id @default(cuid())
+  nome          String
+  descricao     String?
+  precoCentavos Int
+  // Código PDV interno — referência única do produto, pensado para o
+  // matching/merge entre plataformas no onboarding do futuro SaaS.
+  externalCode  String?       @unique
+  status        StatusProduto @default(ATIVO)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  plataformas ProdutoPlataforma[]
+
+  @@map("produtos")
+}
+
+// Mapeamento de um Produto para o item equivalente em uma plataforma
+// específica (iFood, 99Food, Keeta...). Uma linha por produto × plataforma.
+model ProdutoPlataforma {
+  id        String  @id @default(cuid())
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  // "ifood" | "noventaenove" | "keeta" — mesmos valores usados em PlatformToken.platform
+  plataforma String
+
+  // ID do item nessa plataforma: uuid (item.productId) no iFood,
+  // app_item_id (string) na 99Food.
+  itemId String
+
+  // Sobrescreve precoCentavos do Produto nesta plataforma (taxas diferentes
+  // por plataforma); null = usa o preço base.
+  precoCentavos Int?
+
+  // Pode divergir do status "canônico" do Produto durante uma sincronização
+  // parcial (ex: chamada falhou numa plataforma e não nas outras).
+  status StatusProduto @default(ATIVO)
+
+  // Última vez que este mapeamento foi confirmado sincronizado com a API da plataforma.
+  sincronizadoEm DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([produtoId, plataforma])
+  @@unique([plataforma, itemId])
+  @@map("produto_plataformas")
+}
