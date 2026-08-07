@@ -58,12 +58,59 @@ function assinaturaValidaIfood(rawBody, clientSecret, assinaturaRecebida) {
   return crypto.timingSafeEqual(bufEsperado, bufRecebido);
 }
 
+// A 99Food cancela sozinha o pedido que não for confirmado em até 5 min.
+// Confirmação agora é manual (botão no frontend) — esse timer é só uma rede
+// de segurança: se ninguém confirmar a tempo, confirma automaticamente 1 min
+// antes do prazo, pra não perder o pedido por descuido. Só funciona enquanto
+// o processo do backend continua de pé (não sobrevive a um redeploy/restart
+// do Railway no meio da janela — limitação aceita, é melhor que nada).
+const JANELA_CANCELAMENTO_MS = 5 * 60 * 1000;
+const MARGEM_SEGURANCA_MS = 60 * 1000;
+
 /**
- * Processa um evento orderNew: grava o Pedido e confirma automaticamente
- * na 99Food (urgente — só 5 min antes do cancelamento automático). Os dois
- * passos são independentes: uma falha ao gravar no nosso banco não deve
- * impedir a tentativa de confirmação, que é a parte que realmente importa
- * dentro da janela de tempo.
+ * Confirma um pedido na 99Food e grava `confirmadoEm`. Usada tanto pelo
+ * botão manual (routes/webhooks.js POST /pedidos/:id/confirmar) quanto pela
+ * rede de segurança automática.
+ */
+async function confirmarNoventaENove(orderId, { origem }) {
+  try {
+    const resultado = await noventaenove.confirmarPedido(String(orderId));
+    if (resultado.errno === 0) {
+      const pedido = await prisma.pedido.update({
+        where: { plataforma_orderId: { plataforma: 'noventaenove', orderId: String(orderId) } },
+        data: { confirmadoEm: new Date() },
+      });
+      console.log(`[webhook 99food] pedido ${orderId} confirmado (${origem})`);
+      return { ok: true, pedido };
+    }
+    console.error(
+      `[webhook 99food] falha ao confirmar pedido ${orderId} [errno ${resultado.errno}]: ${resultado.errmsg}`
+    );
+    return { ok: false, erro: resultado.errmsg ?? `errno ${resultado.errno}` };
+  } catch (err) {
+    const mensagem = err.response?.data ?? err.message;
+    console.error(`[webhook 99food] erro ao chamar confirmarPedido(${orderId}):`, mensagem);
+    return { ok: false, erro: String(mensagem) };
+  }
+}
+
+/** Agenda a confirmação automática de segurança, só dispara se ninguém confirmou na mão antes. */
+function agendarConfirmacaoDeSeguranca(orderId) {
+  setTimeout(async () => {
+    const pedido = await prisma.pedido
+      .findUnique({ where: { plataforma_orderId: { plataforma: 'noventaenove', orderId: String(orderId) } } })
+      .catch(() => null);
+    if (!pedido || pedido.confirmadoEm) return; // já confirmado na mão (ou pedido sumiu) — nada a fazer
+
+    console.warn(`[webhook 99food] pedido ${orderId} não confirmado manualmente — acionando rede de segurança`);
+    await confirmarNoventaENove(orderId, { origem: 'rede de segurança automática' });
+  }, JANELA_CANCELAMENTO_MS - MARGEM_SEGURANCA_MS);
+}
+
+/**
+ * Processa um evento orderNew: grava o Pedido (sem confirmar) e agenda a
+ * rede de segurança. A confirmação em si agora é manual, via
+ * POST /api/webhooks/pedidos/:id/confirmar.
  */
 async function processarPedidoNovo(orderInfo) {
   const {
@@ -96,34 +143,18 @@ async function processarPedidoNovo(orderInfo) {
       },
     });
   } catch (err) {
-    console.error(`[webhook 99food] falha ao gravar Pedido ${orderId} (confirmando mesmo assim):`, err.message);
+    console.error(`[webhook 99food] falha ao gravar Pedido ${orderId}:`, err.message);
   }
 
-  try {
-    const resultado = await noventaenove.confirmarPedido(String(orderId));
-    if (resultado.errno === 0) {
-      await prisma.pedido
-        .update({
-          where: { plataforma_orderId: { plataforma: 'noventaenove', orderId: String(orderId) } },
-          data: { confirmadoEm: new Date() },
-        })
-        .catch(() => {}); // já logamos o essencial (confirmação na API) mesmo se isso falhar
-      console.log(`[webhook 99food] pedido ${orderId} confirmado automaticamente`);
-    } else {
-      console.error(
-        `[webhook 99food] falha ao confirmar pedido ${orderId} [errno ${resultado.errno}]: ${resultado.errmsg}`
-      );
-    }
-  } catch (err) {
-    console.error(`[webhook 99food] erro ao chamar confirmarPedido(${orderId}):`, err.response?.data ?? err.message);
-  }
+  agendarConfirmacaoDeSeguranca(orderId);
 }
 
 /**
  * POST /api/webhooks/99food
  *
  * Formato confirmado: { app_id, app_shop_id, timestamp, type, data: { order_info } }.
- * type === "orderNew" dispara gravação do Pedido + confirmação automática.
+ * type === "orderNew" dispara gravação do Pedido + agenda a rede de segurança
+ * (confirmação em si é manual agora — ver POST /pedidos/:id/confirmar).
  * Qualquer outro type só é logado/armazenado por enquanto (ex: cancelamento,
  * status update — ainda não modelados).
  */
@@ -214,6 +245,30 @@ router.get(
       take: 50,
     });
     res.json(pedidos);
+  })
+);
+
+/**
+ * POST /api/webhooks/pedidos/:id/confirmar — confirmação manual (botão no
+ * frontend). `:id` é o id interno do Pedido (não o orderId da plataforma).
+ * Idempotente: se já tiver confirmadoEm, só devolve o pedido como está.
+ */
+router.post(
+  '/pedidos/:id/confirmar',
+  asyncHandler(async (req, res) => {
+    const pedido = await prisma.pedido.findUnique({ where: { id: req.params.id } });
+    if (!pedido) return res.status(404).json({ error: 'pedido não encontrado' });
+    if (pedido.confirmadoEm) return res.json(pedido);
+
+    if (pedido.plataforma !== 'noventaenove') {
+      return res.status(400).json({ error: `confirmação manual ainda não suportada para ${pedido.plataforma}` });
+    }
+
+    const resultado = await confirmarNoventaENove(pedido.orderId, { origem: 'confirmação manual' });
+    if (!resultado.ok) {
+      return res.status(502).json({ error: resultado.erro });
+    }
+    res.json(resultado.pedido);
   })
 );
 

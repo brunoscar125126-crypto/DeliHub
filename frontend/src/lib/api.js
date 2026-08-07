@@ -29,6 +29,7 @@ export const api = {
   removerPlataformaProduto: (id, plataforma) =>
     request(`/api/produtos/${id}/plataformas/${plataforma}`, { method: 'DELETE' }),
   listarPedidos: () => request('/api/webhooks/pedidos'),
+  confirmarPedido: (id) => request(`/api/webhooks/pedidos/${id}/confirmar`, { method: 'POST' }),
   previewImportacao: (plataforma) => request(`/api/importacao/${plataforma}/preview`),
   confirmarImportacao: (itens) =>
     request('/api/importacao/confirmar', { method: 'POST', body: JSON.stringify({ itens }) }),

@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { api } from '../lib/api.js';
 import PlatformBadge from './PlatformBadge.jsx';
 import StatusBadge from './StatusBadge.jsx';
+import PrimaryButton from './PrimaryButton.jsx';
 
 function formatarPreco(centavos) {
   if (centavos == null) return '—';
@@ -54,15 +56,32 @@ function ItemPedido({ item, nivel = 0 }) {
  * Detalhe completo de um pedido — tudo que a plataforma manda, não só o
  * resumo da tabela. `pedido` é o registro do backend (já traz shop/price/
  * receiveAddress/orderItems/payloadBruto prontos, sem precisar de rota nova).
+ * `onConfirmado(pedidoAtualizado)` é opcional — deixa a página que abriu o
+ * modal atualizar sua lista na hora, sem esperar o próximo polling de 8s.
  */
-export default function ModalPedido({ pedido, onFechar }) {
+export default function ModalPedido({ pedido, onFechar, onConfirmado }) {
   const [verJsonCompleto, setVerJsonCompleto] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [erroConfirmar, setErroConfirmar] = useState(null);
 
   if (!pedido) return null;
 
   const itens = Array.isArray(pedido.orderItems) ? pedido.orderItems : [];
   const endereco = formatarEndereco(pedido.receiveAddress);
   const shop = pedido.shop ?? {};
+
+  async function confirmar() {
+    setConfirmando(true);
+    setErroConfirmar(null);
+    try {
+      const atualizado = await api.confirmarPedido(pedido.id);
+      onConfirmado?.(atualizado);
+    } catch (err) {
+      setErroConfirmar(err.message);
+    } finally {
+      setConfirmando(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
@@ -141,6 +160,28 @@ export default function ModalPedido({ pedido, onFechar }) {
             )}
           </div>
         </div>
+
+        {!pedido.confirmadoEm && (
+          <div className="flex items-center justify-between gap-3 border-t border-border px-6 py-4">
+            {pedido.plataforma === 'noventaenove' ? (
+              <>
+                <p className="text-xs text-warning">
+                  A 99Food cancela sozinha se não for confirmado em até 5 min do recebimento.
+                </p>
+                <div className="flex shrink-0 items-center gap-2">
+                  {erroConfirmar && <span className="text-xs text-danger">{erroConfirmar}</span>}
+                  <PrimaryButton onClick={confirmar} disabled={confirmando}>
+                    {confirmando ? 'Confirmando...' : 'Confirmar pedido'}
+                  </PrimaryButton>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-text-secondary">
+                Confirmação manual ainda não disponível pra {pedido.plataforma} nesta tela.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

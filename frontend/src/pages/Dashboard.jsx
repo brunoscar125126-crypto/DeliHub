@@ -8,6 +8,7 @@ import StatusBadge from '../components/StatusBadge.jsx';
 import PlatformBadge from '../components/PlatformBadge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ModalPedido from '../components/ModalPedido.jsx';
+import BotaoConfirmarPedido from '../components/BotaoConfirmarPedido.jsx';
 
 function formatarPreco(centavos) {
   return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -20,25 +21,6 @@ function ehHoje(dataISO) {
     d.getFullYear() === hoje.getFullYear() && d.getMonth() === hoje.getMonth() && d.getDate() === hoje.getDate()
   );
 }
-
-const COLUNAS_PEDIDOS_RECENTES = [
-  {
-    chave: 'orderId',
-    label: 'Pedido',
-    render: (p) => <span className="font-mono text-xs text-text-secondary">{p.orderId}</span>,
-  },
-  { chave: 'plataforma', label: 'Plataforma', render: (p) => <PlatformBadge plataforma={p.plataforma} /> },
-  {
-    chave: 'status',
-    label: 'Status',
-    render: (p) =>
-      p.confirmadoEm ? (
-        <StatusBadge variante="success">Confirmado</StatusBadge>
-      ) : (
-        <StatusBadge variante="warning">Pendente</StatusBadge>
-      ),
-  },
-];
 
 // Intervalo do polling "quase tempo real" dos pedidos. GET /api/webhooks/pedidos
 // não tem rate limit (lê só do nosso banco, não bate na API das plataformas),
@@ -76,6 +58,31 @@ export default function Dashboard() {
     const intervalo = setInterval(() => carregar(true), INTERVALO_POLLING_MS);
     return () => clearInterval(intervalo);
   }, [carregar]);
+
+  // Atualiza um pedido específico na lista já carregada — usado depois de
+  // confirmar, pra refletir na hora sem esperar o próximo polling de 8s.
+  function patchPedido(atualizado) {
+    setPedidos((prev) => prev.map((p) => (p.id === atualizado.id ? atualizado : p)));
+  }
+
+  const colunasPedidosRecentes = [
+    {
+      chave: 'orderId',
+      label: 'Pedido',
+      render: (p) => <span className="font-mono text-xs text-text-secondary">{p.orderId}</span>,
+    },
+    { chave: 'plataforma', label: 'Plataforma', render: (p) => <PlatformBadge plataforma={p.plataforma} /> },
+    {
+      chave: 'status',
+      label: 'Status',
+      render: (p) =>
+        p.confirmadoEm ? (
+          <StatusBadge variante="success">Confirmado</StatusBadge>
+        ) : (
+          <BotaoConfirmarPedido pedido={p} onConfirmado={patchPedido} />
+        ),
+    },
+  ];
 
   const totalProdutos = produtos.length;
   const produtosAtivos = produtos.filter((p) => p.plataformas.some((pp) => pp.status === 'ATIVO')).length;
@@ -131,7 +138,7 @@ export default function Dashboard() {
             <div className="mt-8">
               <h2 className="text-sm font-semibold text-text-secondary">Pedidos recentes</h2>
               <DataTable
-                colunas={COLUNAS_PEDIDOS_RECENTES}
+                colunas={colunasPedidosRecentes}
                 linhas={pedidos.slice(0, 5)}
                 chaveLinha={(p) => p.id}
                 onLinhaClick={(p) => setPedidoSelecionadoId(p.id)}
@@ -142,7 +149,11 @@ export default function Dashboard() {
       )}
 
       {pedidoSelecionado && (
-        <ModalPedido pedido={pedidoSelecionado} onFechar={() => setPedidoSelecionadoId(null)} />
+        <ModalPedido
+          pedido={pedidoSelecionado}
+          onFechar={() => setPedidoSelecionadoId(null)}
+          onConfirmado={patchPedido}
+        />
       )}
     </div>
   );

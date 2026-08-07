@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ClipboardList, DollarSign, Clock } from 'lucide-react';
 import { api } from '../lib/api.js';
+import BotaoConfirmarPedido from '../components/BotaoConfirmarPedido.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import MetricCard from '../components/MetricCard.jsx';
 import DataTable from '../components/DataTable.jsx';
@@ -63,6 +64,12 @@ export default function Pedidos() {
     return () => clearInterval(intervalo);
   }, [carregar]);
 
+  // Atualiza um pedido específico na lista já carregada — usado depois de
+  // confirmar, pra refletir na hora sem esperar o próximo polling de 8s.
+  function patchPedido(atualizado) {
+    setPedidos((prev) => prev.map((p) => (p.id === atualizado.id ? atualizado : p)));
+  }
+
   const pedidosHoje = pedidos.filter((p) => ehHoje(p.createdAt));
   const valorHoje = pedidosHoje.reduce((soma, p) => soma + (precoTotal(p.price) ?? 0), 0);
   const pendentes = pedidos.filter((p) => !p.confirmadoEm).length;
@@ -91,7 +98,7 @@ export default function Pedidos() {
         p.confirmadoEm ? (
           <StatusBadge variante="success">Confirmado</StatusBadge>
         ) : (
-          <StatusBadge variante="warning">Pendente</StatusBadge>
+          <BotaoConfirmarPedido pedido={p} onConfirmado={patchPedido} />
         ),
     },
     {
@@ -161,7 +168,11 @@ export default function Pedidos() {
       )}
 
       {pedidoSelecionado && (
-        <ModalPedido pedido={pedidoSelecionado} onFechar={() => setPedidoSelecionadoId(null)} />
+        <ModalPedido
+          pedido={pedidoSelecionado}
+          onFechar={() => setPedidoSelecionadoId(null)}
+          onConfirmado={patchPedido}
+        />
       )}
     </div>
   );
