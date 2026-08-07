@@ -25,7 +25,7 @@ export default function AppSidebar({ paginaAtual, onNavegar, aberta, onFechar })
         }`}
       >
         <div className="flex items-center gap-2 px-5 py-5">
-          <LogoDeliHub tamanhoIcone={32} />
+          <LogoDeliHub altura={30} />
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 px-3">
