@@ -10,15 +10,21 @@ import { useIsMobile } from '../hooks/useIsMobile.js';
  * @param {any[]} linhas
  * @param {(linha: any) => string} chaveLinha
  * @param {(linha: any) => any} [renderCardMobile]
+ * @param {(linha: any) => void} [onLinhaClick] - se fornecido, linha/card vira clicável (ex: abrir detalhe)
  */
-export default function DataTable({ colunas, linhas, chaveLinha, renderCardMobile }) {
+export default function DataTable({ colunas, linhas, chaveLinha, renderCardMobile, onLinhaClick }) {
   const isMobile = useIsMobile();
+  const clicavel = !!onLinhaClick;
 
   if (isMobile) {
     return (
       <div className="mt-6 space-y-3">
         {linhas.map((linha) => (
-          <div key={chaveLinha(linha)} className="rounded-card border border-border bg-surface p-4 shadow-card">
+          <div
+            key={chaveLinha(linha)}
+            onClick={clicavel ? () => onLinhaClick(linha) : undefined}
+            className={`rounded-card border border-border bg-surface p-4 shadow-card ${clicavel ? 'cursor-pointer active:bg-surface-muted' : ''}`}
+          >
             {renderCardMobile
               ? renderCardMobile(linha)
               : colunas.map((coluna) => (
@@ -49,7 +55,11 @@ export default function DataTable({ colunas, linhas, chaveLinha, renderCardMobil
         </thead>
         <tbody>
           {linhas.map((linha) => (
-            <tr key={chaveLinha(linha)} className="border-b border-border last:border-0 hover:bg-surface-muted/60">
+            <tr
+              key={chaveLinha(linha)}
+              onClick={clicavel ? () => onLinhaClick(linha) : undefined}
+              className={`border-b border-border last:border-0 hover:bg-surface-muted/60 ${clicavel ? 'cursor-pointer' : ''}`}
+            >
               {colunas.map((coluna) => (
                 <td key={coluna.chave} className="px-5 py-4 text-sm text-text-primary">
                   {coluna.render ? coluna.render(linha) : linha[coluna.chave]}

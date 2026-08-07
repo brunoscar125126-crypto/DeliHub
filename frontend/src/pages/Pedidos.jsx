@@ -7,6 +7,7 @@ import DataTable from '../components/DataTable.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import PlatformBadge from '../components/PlatformBadge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import ModalPedido from '../components/ModalPedido.jsx';
 
 function formatarPreco(centavos) {
   if (centavos == null) return '—';
@@ -37,6 +38,10 @@ export default function Pedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
+  // Guarda só o id — assim, se o polling trouxer um dado novo (ex: confirmou
+  // enquanto o modal tava aberto), o detalhe exibido acompanha.
+  const [pedidoSelecionadoId, setPedidoSelecionadoId] = useState(null);
+  const pedidoSelecionado = pedidos.find((p) => p.id === pedidoSelecionadoId) ?? null;
 
   // `silencioso` evita o piscar de "Carregando..." nas atualizações automáticas
   // em segundo plano — só a busca inicial (e o clique em "Atualizar") mostram o loading.
@@ -147,7 +152,16 @@ export default function Pedidos() {
       ) : pedidos.length === 0 ? (
         <EmptyState>Nenhum pedido recebido ainda.</EmptyState>
       ) : (
-        <DataTable colunas={colunas} linhas={pedidos} chaveLinha={(p) => p.id} />
+        <DataTable
+          colunas={colunas}
+          linhas={pedidos}
+          chaveLinha={(p) => p.id}
+          onLinhaClick={(p) => setPedidoSelecionadoId(p.id)}
+        />
+      )}
+
+      {pedidoSelecionado && (
+        <ModalPedido pedido={pedidoSelecionado} onFechar={() => setPedidoSelecionadoId(null)} />
       )}
     </div>
   );
