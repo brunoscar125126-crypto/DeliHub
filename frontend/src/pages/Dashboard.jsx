@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Package, CheckCircle2, DollarSign, ClipboardList } from 'lucide-react';
 import { api } from '../lib/api.js';
+import { usePedidos } from '../context/PedidosContext.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import MetricCard from '../components/MetricCard.jsx';
 import DataTable from '../components/DataTable.jsx';
@@ -22,14 +23,17 @@ function ehHoje(dataISO) {
   );
 }
 
-// Intervalo do polling "quase tempo real" dos pedidos. GET /api/webhooks/pedidos
-// não tem rate limit (lê só do nosso banco, não bate na API das plataformas),
-// diferente do preview de cardápio — por isso pode ficar curto sem risco.
+// Intervalo do polling dos produtos (independente do de pedidos, que já vem
+// do PedidosContext). GET /api/produtos também só lê do nosso banco.
 const INTERVALO_POLLING_MS = 8000;
 
 export default function Dashboard() {
+  // Pedidos/polling agora vêm do PedidosContext (levantado pro App.jsx) —
+  // roda em qualquer página, então a detecção de pedido novo (som/notificação)
+  // não depende de estar com o Dashboard aberto.
+  const { pedidos, patchPedido } = usePedidos();
+
   const [produtos, setProdutos] = useState([]);
-  const [pedidos, setPedidos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
   // Mesmo padrão da página Pedidos: guarda o id, não o objeto, pra
@@ -37,15 +41,11 @@ export default function Dashboard() {
   const [pedidoSelecionadoId, setPedidoSelecionadoId] = useState(null);
   const pedidoSelecionado = pedidos.find((p) => p.id === pedidoSelecionadoId) ?? null;
 
-  // `silencioso` evita o piscar de "Carregando..." nas atualizações automáticas
-  // em segundo plano — só a busca inicial mostra o loading.
-  const carregar = useCallback(async (silencioso = false) => {
+  const carregarProdutos = useCallback(async (silencioso = false) => {
     if (!silencioso) setCarregando(true);
     setErro(null);
     try {
-      const [p, ped] = await Promise.all([api.listarProdutos(), api.listarPedidos().catch(() => [])]);
-      setProdutos(p);
-      setPedidos(ped);
+      setProdutos(await api.listarProdutos());
     } catch (err) {
       setErro(err.message);
     } finally {
@@ -54,16 +54,10 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    carregar();
-    const intervalo = setInterval(() => carregar(true), INTERVALO_POLLING_MS);
+    carregarProdutos();
+    const intervalo = setInterval(() => carregarProdutos(true), INTERVALO_POLLING_MS);
     return () => clearInterval(intervalo);
-  }, [carregar]);
-
-  // Atualiza um pedido específico na lista já carregada — usado depois de
-  // confirmar, pra refletir na hora sem esperar o próximo polling de 8s.
-  function patchPedido(atualizado) {
-    setPedidos((prev) => prev.map((p) => (p.id === atualizado.id ? atualizado : p)));
-  }
+  }, [carregarProdutos]);
 
   const colunasPedidosRecentes = [
     {

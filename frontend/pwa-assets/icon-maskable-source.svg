@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Versão "maskable" do ícone: fundo sólido cobrindo o quadrado inteiro +
+       marca reduzida/centralizada dentro da safe zone (o SO pode recortar
+       em círculo/rounded-square e cortar qualquer coisa fora dessa área). -->
+  <rect width="512" height="512" fill="#FFFFFF" />
+  <g transform="translate(85,77.9) scale(0.834)">
+    <rect x="21" y="128" width="96" height="43" rx="21.5" fill="#F5A623" />
+    <rect x="21" y="235" width="149" height="43" rx="21.5" fill="#F5A623" />
+    <rect x="21" y="341" width="75" height="43" rx="21.5" fill="#F5A623" />
+    <path
+      d="M181 43h64c100 0 181 81 181 181v64c0 100-81 181-181 181h-64a32 32 0 0 1-32-32V75a32 32 0 0 1 32-32Z"
+      fill="#2B1810"
+    />
+    <circle cx="277" cy="155" r="19" fill="#FFFFFF" />
+    <path d="M181 256a96 96 0 0 1 192 0Z" fill="#FFFFFF" />
+    <rect x="165" y="256" width="224" height="36" rx="18" fill="#FFFFFF" />
+  </g>
+</svg>
