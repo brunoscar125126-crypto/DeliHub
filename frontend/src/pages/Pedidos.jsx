@@ -28,25 +28,34 @@ function ehHoje(dataISO) {
   );
 }
 
+// Intervalo do polling "quase tempo real" dos pedidos. GET /api/webhooks/pedidos
+// não tem rate limit (lê só do nosso banco, não bate na API das plataformas),
+// diferente do preview de cardápio — por isso pode ficar curto sem risco.
+const INTERVALO_POLLING_MS = 8000;
+
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
+  // `silencioso` evita o piscar de "Carregando..." nas atualizações automáticas
+  // em segundo plano — só a busca inicial (e o clique em "Atualizar") mostram o loading.
+  const carregar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCarregando(true);
     setErro(null);
     try {
       setPedidos(await api.listarPedidos());
     } catch (err) {
       setErro(err.message);
     } finally {
-      setCarregando(false);
+      if (!silencioso) setCarregando(false);
     }
   }, []);
 
   useEffect(() => {
     carregar();
+    const intervalo = setInterval(() => carregar(true), INTERVALO_POLLING_MS);
+    return () => clearInterval(intervalo);
   }, [carregar]);
 
   const pedidosHoje = pedidos.filter((p) => ehHoje(p.createdAt));
@@ -93,13 +102,19 @@ export default function Pedidos() {
         titulo="Pedidos"
         subtitulo="Pedidos recebidos via webhook/polling das plataformas"
         acoes={
-          <button
-            type="button"
-            onClick={carregar}
-            className="min-h-[44px] rounded-control border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-card transition-colors duration-150 hover:bg-surface-muted"
-          >
-            Atualizar
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="hidden items-center gap-1.5 text-xs text-text-secondary sm:flex">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
+              Atualiza a cada {INTERVALO_POLLING_MS / 1000}s
+            </span>
+            <button
+              type="button"
+              onClick={() => carregar()}
+              className="min-h-[44px] rounded-control border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-card transition-colors duration-150 hover:bg-surface-muted"
+            >
+              Atualizar
+            </button>
+          </div>
         }
       />
 
