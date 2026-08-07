@@ -18,11 +18,13 @@ export default {
         background: '#F8F9FB',
         surface: '#FFFFFF',
         'surface-muted': '#F5F6F8',
+        // Laranja/dourado e marrom-escuro extraídos da logo oficial do
+        // DeliHub — identidade visual da marca (ver LogoDeliHub.jsx).
         primary: {
-          DEFAULT: '#FF6B1A',
-          hover: '#EA5B0C',
+          DEFAULT: '#F5A623',
+          hover: '#DB8F13',
         },
-        'text-primary': '#18181B',
+        'text-primary': '#2B1810',
         'text-secondary': '#71717A',
         border: '#E4E4E7',
         success: '#10B981',

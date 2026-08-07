@@ -1,4 +1,5 @@
 import { LayoutDashboard, UtensilsCrossed, Package, ClipboardList, Settings } from 'lucide-react';
+import LogoDeliHub from './LogoDeliHub.jsx';
 
 const ITENS = [
   { valor: 'dashboard', label: 'Dashboard', Icone: LayoutDashboard },
@@ -24,12 +25,7 @@ export default function AppSidebar({ paginaAtual, onNavegar, aberta, onFechar })
         }`}
       >
         <div className="flex items-center gap-2 px-5 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-control bg-primary text-sm font-bold text-white">
-            D
-          </div>
-          <span className="text-lg font-semibold text-text-primary">
-            Deli<span className="text-primary">Hub</span>
-          </span>
+          <LogoDeliHub tamanhoIcone={32} />
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 px-3">
