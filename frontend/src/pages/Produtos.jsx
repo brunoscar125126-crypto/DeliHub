@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pencil, Trash2, X, Plus } from 'lucide-react';
 import { api } from '../lib/api.js';
+import PageHeader from '../components/PageHeader.jsx';
+import PrimaryButton from '../components/PrimaryButton.jsx';
+import DataTable from '../components/DataTable.jsx';
+import StatusBadge from '../components/StatusBadge.jsx';
+import FilterBar from '../components/FilterBar.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 const PLATAFORMAS = [
   { chave: 'ifood', label: 'iFood' },
@@ -18,14 +24,25 @@ function reaisParaCentavos(texto) {
   return Number.isFinite(n) ? Math.round(n * 100) : null;
 }
 
+function calcularMargem(produto) {
+  if (produto.custoCentavos == null || produto.precoCentavos <= 0) return null;
+  return Math.round(((produto.precoCentavos - produto.custoCentavos) / produto.precoCentavos) * 100);
+}
+
 function Iniciais({ nome }) {
-  const cores = ['bg-orange-100 text-orange-700', 'bg-amber-100 text-amber-700', 'bg-rose-100 text-rose-700'];
+  const cores = ['bg-orange-50 text-primary', 'bg-amber-50 text-warning', 'bg-rose-50 text-danger'];
   const cor = cores[nome.charCodeAt(0) % cores.length];
   return (
     <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${cor}`}>
       {nome.charAt(0).toUpperCase()}
     </div>
   );
+}
+
+function BadgeMargem({ margem }) {
+  if (margem == null) return <span className="text-sm text-text-secondary">—</span>;
+  const variante = margem >= 50 ? 'success' : margem >= 20 ? 'warning' : 'danger';
+  return <StatusBadge variante={variante}>{margem}%</StatusBadge>;
 }
 
 /** Uma célula de plataforma: vinculado mostra preço + toggle + desvincular; não vinculado mostra "vincular". */
@@ -36,7 +53,7 @@ function CelulaPlataforma({ produtoId, plataforma, vinculo, onMudou }) {
   const [erro, setErro] = useState(null);
 
   if (plataforma === 'keeta') {
-    return <span className="text-sm text-stone-300">—</span>;
+    return <span className="text-sm text-text-secondary">—</span>;
   }
 
   async function confirmarVinculo() {
@@ -94,21 +111,26 @@ function CelulaPlataforma({ produtoId, plataforma, vinculo, onMudou }) {
               onChange={(e) => setItemId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && confirmarVinculo()}
               placeholder="itemId"
-              className="w-24 rounded border border-stone-300 px-1.5 py-0.5 text-xs"
+              className="w-24 rounded-control border border-border px-1.5 py-1 text-xs"
             />
             <button
               type="button"
               onClick={confirmarVinculo}
               disabled={carregando}
-              className="rounded bg-stone-900 px-1.5 py-0.5 text-xs text-white disabled:opacity-50"
+              className="rounded-control bg-text-primary px-2 py-1 text-xs text-white disabled:opacity-50"
             >
               ok
             </button>
-            <button type="button" onClick={() => setVinculando(false)} className="text-xs text-stone-400">
+            <button
+              type="button"
+              onClick={() => setVinculando(false)}
+              className="p-1 text-text-secondary"
+              aria-label="Cancelar"
+            >
               <X size={14} />
             </button>
           </div>
-          {erro && <span className="text-[11px] text-red-600">{erro}</span>}
+          {erro && <span className="text-[11px] text-danger">{erro}</span>}
         </div>
       );
     }
@@ -116,7 +138,7 @@ function CelulaPlataforma({ produtoId, plataforma, vinculo, onMudou }) {
       <button
         type="button"
         onClick={() => setVinculando(true)}
-        className="flex items-center gap-1 rounded-full border border-dashed border-stone-300 px-2.5 py-1 text-xs text-stone-400 hover:border-orange-400 hover:text-orange-600"
+        className="flex min-h-[32px] items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-text-secondary hover:border-primary hover:text-primary"
       >
         <Plus size={12} /> vincular
       </button>
@@ -127,18 +149,20 @@ function CelulaPlataforma({ produtoId, plataforma, vinculo, onMudou }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <span className="text-sm text-stone-700">{formatarPreco(vinculo.precoCentavos)}</span>
+        <span className="text-sm text-text-primary">{formatarPreco(vinculo.precoCentavos)}</span>
         <button
           type="button"
           onClick={alternarStatus}
           disabled={carregando}
           title={ativo ? 'Ativo — clique pra pausar' : 'Pausado — clique pra reativar'}
-          className={`relative h-4 w-7 shrink-0 rounded-full transition disabled:opacity-50 ${
-            ativo ? 'bg-emerald-500' : 'bg-stone-300'
+          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 disabled:opacity-50 ${
+            ativo ? 'bg-success' : 'bg-border'
           }`}
         >
           <span
-            className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition ${ativo ? 'left-3.5' : 'left-0.5'}`}
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform duration-150 ${
+              ativo ? 'translate-x-[18px]' : 'translate-x-0.5'
+            }`}
           />
         </button>
         <button
@@ -146,12 +170,12 @@ function CelulaPlataforma({ produtoId, plataforma, vinculo, onMudou }) {
           onClick={desvincular}
           disabled={carregando}
           title="Desvincular"
-          className="text-stone-300 hover:text-red-500"
+          className="p-1 text-text-secondary hover:text-danger"
         >
           <X size={13} />
         </button>
       </div>
-      {erro && <span className="text-[11px] text-red-600">{erro}</span>}
+      {erro && <span className="text-[11px] text-danger">{erro}</span>}
     </div>
   );
 }
@@ -199,88 +223,83 @@ function ModalProduto({ produto, onFechar, onSalvo }) {
 
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-stone-900">{produto ? 'Editar produto' : 'Novo produto'}</h3>
+      <div className="w-full max-w-md rounded-card bg-surface p-6 shadow-xl">
+        <h3 className="text-lg font-semibold text-text-primary">{produto ? 'Editar produto' : 'Novo produto'}</h3>
 
         <div className="mt-4 space-y-3.5">
           <label className="block text-sm">
-            <span className="text-stone-500">Nome</span>
+            <span className="text-text-secondary">Nome</span>
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
             />
           </label>
           <label className="block text-sm">
-            <span className="text-stone-500">Descrição</span>
+            <span className="text-text-secondary">Descrição</span>
             <input
               type="text"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
             />
           </label>
           <label className="block text-sm">
-            <span className="text-stone-500">Categoria</span>
+            <span className="text-text-secondary">Categoria</span>
             <input
               type="text"
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
             />
           </label>
           <div className="grid grid-cols-2 gap-3.5">
             <label className="block text-sm">
-              <span className="text-stone-500">Preço (R$)</span>
+              <span className="text-text-secondary">Preço (R$)</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={preco}
                 onChange={(e) => setPreco(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
               />
             </label>
             <label className="block text-sm">
-              <span className="text-stone-500">Custo (R$, opcional)</span>
+              <span className="text-text-secondary">Custo (R$, opcional)</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={custo}
                 onChange={(e) => setCusto(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
               />
             </label>
           </div>
           <label className="block text-sm">
-            <span className="text-stone-500">URL da imagem (opcional)</span>
+            <span className="text-text-secondary">URL da imagem (opcional)</span>
             <input
               type="text"
               value={imagemUrl}
               onChange={(e) => setImagemUrl(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
             />
           </label>
         </div>
 
-        {erro && <p className="mt-3 text-xs text-red-600">{erro}</p>}
+        {erro && <p className="mt-3 text-xs text-danger">{erro}</p>}
 
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={onFechar}
-            className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+            className="min-h-[44px] rounded-control border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-muted"
           >
             Cancelar
           </button>
-          <button
-            type="button"
-            onClick={salvar}
-            disabled={salvando}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
-          >
+          <PrimaryButton onClick={salvar} disabled={salvando}>
             {salvando ? 'Salvando...' : 'Salvar'}
-          </button>
+          </PrimaryButton>
         </div>
       </div>
     </div>
@@ -329,139 +348,156 @@ export default function Produtos() {
     }
   }
 
-  return (
-    <div className="p-8">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Produtos</h1>
-          <p className="mt-1 text-sm text-stone-500">Gerencie seus produtos e vínculos por plataforma</p>
+  const colunas = [
+    {
+      chave: 'produto',
+      label: 'Produto',
+      render: (produto) => (
+        <div className="flex items-center gap-3">
+          {produto.imagemUrl ? (
+            <img src={produto.imagemUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+          ) : (
+            <Iniciais nome={produto.nome} />
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-text-primary">{produto.nome}</p>
+            {produto.descricao && <p className="truncate text-xs text-text-secondary">{produto.descricao}</p>}
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setModalProduto({})}
-          className="rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-orange-600"
-        >
-          + Novo Produto
-        </button>
-      </header>
+      ),
+    },
+    { chave: 'categoria', label: 'Categoria', render: (p) => p.categoria ?? '—' },
+    ...PLATAFORMAS.map((plataforma) => ({
+      chave: plataforma.chave,
+      label: plataforma.label,
+      render: (produto) => (
+        <CelulaPlataforma
+          produtoId={produto.id}
+          plataforma={plataforma.chave}
+          vinculo={produto.plataformas.find((pp) => pp.plataforma === plataforma.chave) ?? null}
+          onMudou={carregar}
+        />
+      ),
+    })),
+    { chave: 'custo', label: 'Custo', render: (p) => formatarPreco(p.custoCentavos) },
+    { chave: 'margem', label: 'Margem', render: (p) => <BadgeMargem margem={calcularMargem(p)} /> },
+    {
+      chave: 'acoes',
+      label: 'Ações',
+      render: (produto) => (
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setModalProduto(produto)}
+            title="Editar"
+            className="flex h-9 w-9 items-center justify-center rounded-control text-text-secondary hover:bg-surface-muted hover:text-text-primary"
+          >
+            <Pencil size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setExcluindo(produto)}
+            title="Excluir"
+            className="flex h-9 w-9 items-center justify-center rounded-control text-text-secondary hover:bg-rose-50 hover:text-danger"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ),
+    },
+  ];
 
-      <div className="mt-6">
+  function renderCardMobile(produto) {
+    const margem = calcularMargem(produto);
+    return (
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            {produto.imagemUrl ? (
+              <img src={produto.imagemUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+            ) : (
+              <Iniciais nome={produto.nome} />
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-text-primary">{produto.nome}</p>
+              <p className="text-xs text-text-secondary">{produto.categoria ?? 'Sem categoria'}</p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setModalProduto(produto)}
+              title="Editar"
+              className="flex h-9 w-9 items-center justify-center rounded-control text-text-secondary hover:bg-surface-muted"
+            >
+              <Pencil size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setExcluindo(produto)}
+              title="Excluir"
+              className="flex h-9 w-9 items-center justify-center rounded-control text-text-secondary hover:bg-rose-50 hover:text-danger"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center gap-4 border-t border-border pt-3 text-sm">
+          <span className="text-text-secondary">Custo: {formatarPreco(produto.custoCentavos)}</span>
+          <BadgeMargem margem={margem} />
+        </div>
+
+        <div className="mt-3 space-y-2 border-t border-border pt-3">
+          {PLATAFORMAS.map((plataforma) => (
+            <div key={plataforma.chave} className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium text-text-secondary">{plataforma.label}</span>
+              <CelulaPlataforma
+                produtoId={produto.id}
+                plataforma={plataforma.chave}
+                vinculo={produto.plataformas.find((pp) => pp.plataforma === plataforma.chave) ?? null}
+                onMudou={carregar}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        titulo="Produtos"
+        subtitulo="Gerencie seus produtos e vínculos por plataforma"
+        acoes={<PrimaryButton onClick={() => setModalProduto({})}>+ Novo Produto</PrimaryButton>}
+      />
+
+      <FilterBar>
         <input
           type="text"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar produto ou categoria..."
-          className="w-full max-w-sm rounded-lg border border-stone-300 bg-white px-3.5 py-2.5 text-sm shadow-sm"
+          className="w-full max-w-sm rounded-control border border-border bg-surface px-3.5 py-2.5 text-sm shadow-card"
         />
-      </div>
+      </FilterBar>
 
       {erro && (
-        <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+        <div className="mt-4 rounded-card border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-danger">{erro}</div>
       )}
 
       {carregando ? (
-        <p className="mt-8 text-sm text-stone-500">Carregando...</p>
+        <EmptyState>Carregando...</EmptyState>
       ) : produtosFiltrados.length === 0 ? (
-        <p className="mt-8 text-sm text-stone-500">Nenhum produto encontrado.</p>
+        <EmptyState>Nenhum produto encontrado.</EmptyState>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-stone-200 bg-stone-50/60 text-xs uppercase tracking-wide text-stone-400">
-                <th className="px-5 py-3.5 font-medium">Produto</th>
-                <th className="px-5 py-3.5 font-medium">Categoria</th>
-                {PLATAFORMAS.map((p) => (
-                  <th key={p.chave} className="px-5 py-3.5 font-medium">
-                    {p.label}
-                  </th>
-                ))}
-                <th className="px-5 py-3.5 font-medium">Custo</th>
-                <th className="px-5 py-3.5 font-medium">Margem</th>
-                <th className="px-5 py-3.5 font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {produtosFiltrados.map((produto) => {
-                const margem =
-                  produto.custoCentavos != null && produto.precoCentavos > 0
-                    ? Math.round(((produto.precoCentavos - produto.custoCentavos) / produto.precoCentavos) * 100)
-                    : null;
-                return (
-                  <tr key={produto.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/60">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        {produto.imagemUrl ? (
-                          <img
-                            src={produto.imagemUrl}
-                            alt=""
-                            className="h-10 w-10 shrink-0 rounded-full object-cover"
-                          />
-                        ) : (
-                          <Iniciais nome={produto.nome} />
-                        )}
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-stone-900">{produto.nome}</p>
-                          {produto.descricao && (
-                            <p className="truncate text-xs text-stone-400">{produto.descricao}</p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-stone-600">{produto.categoria ?? '—'}</td>
-                    {PLATAFORMAS.map((p) => (
-                      <td key={p.chave} className="px-5 py-4">
-                        <CelulaPlataforma
-                          produtoId={produto.id}
-                          plataforma={p.chave}
-                          vinculo={produto.plataformas.find((pp) => pp.plataforma === p.chave) ?? null}
-                          onMudou={carregar}
-                        />
-                      </td>
-                    ))}
-                    <td className="px-5 py-4 text-sm text-stone-600">{formatarPreco(produto.custoCentavos)}</td>
-                    <td className="px-5 py-4">
-                      {margem != null ? (
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                            margem >= 50
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : margem >= 20
-                                ? 'bg-amber-100 text-amber-700'
-                                : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {margem}%
-                        </span>
-                      ) : (
-                        <span className="text-sm text-stone-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setModalProduto(produto)}
-                          title="Editar"
-                          className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setExcluindo(produto)}
-                          title="Excluir"
-                          className="rounded-lg p-2 text-stone-400 hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          colunas={colunas}
+          linhas={produtosFiltrados}
+          chaveLinha={(p) => p.id}
+          renderCardMobile={renderCardMobile}
+        />
       )}
 
       {modalProduto !== null && (
@@ -477,9 +513,9 @@ export default function Produtos() {
 
       {excluindo && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-stone-900">Excluir "{excluindo.nome}"?</h3>
-            <p className="mt-1.5 text-sm text-stone-500">
+          <div className="w-full max-w-sm rounded-card bg-surface p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-text-primary">Excluir "{excluindo.nome}"?</h3>
+            <p className="mt-1.5 text-sm text-text-secondary">
               Remove o produto e todos os vínculos de plataforma daqui — não afeta os itens já cadastrados nas
               próprias plataformas.
             </p>
@@ -487,14 +523,14 @@ export default function Produtos() {
               <button
                 type="button"
                 onClick={() => setExcluindo(null)}
-                className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+                className="min-h-[44px] rounded-control border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-muted"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => confirmarExclusao(excluindo)}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700"
+                className="min-h-[44px] rounded-control bg-danger px-4 py-2 text-sm font-medium text-white shadow-card hover:opacity-90"
               >
                 Excluir
               </button>

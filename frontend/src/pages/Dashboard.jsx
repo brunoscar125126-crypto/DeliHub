@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Package, CheckCircle2, DollarSign, ClipboardList } from 'lucide-react';
 import { api } from '../lib/api.js';
-import CardEstatistica from '../components/CardEstatistica.jsx';
+import PageHeader from '../components/PageHeader.jsx';
+import MetricCard from '../components/MetricCard.jsx';
+import DataTable from '../components/DataTable.jsx';
+import StatusBadge from '../components/StatusBadge.jsx';
+import PlatformBadge from '../components/PlatformBadge.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 function formatarPreco(centavos) {
   return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -14,6 +19,25 @@ function ehHoje(dataISO) {
     d.getFullYear() === hoje.getFullYear() && d.getMonth() === hoje.getMonth() && d.getDate() === hoje.getDate()
   );
 }
+
+const COLUNAS_PEDIDOS_RECENTES = [
+  {
+    chave: 'orderId',
+    label: 'Pedido',
+    render: (p) => <span className="font-mono text-xs text-text-secondary">{p.orderId}</span>,
+  },
+  { chave: 'plataforma', label: 'Plataforma', render: (p) => <PlatformBadge plataforma={p.plataforma} /> },
+  {
+    chave: 'status',
+    label: 'Status',
+    render: (p) =>
+      p.confirmadoEm ? (
+        <StatusBadge variante="success">Confirmado</StatusBadge>
+      ) : (
+        <StatusBadge variante="warning">Pendente</StatusBadge>
+      ),
+  },
+];
 
 export default function Dashboard() {
   const [produtos, setProdutos] = useState([]);
@@ -46,66 +70,44 @@ export default function Dashboard() {
   const pedidosHoje = pedidos.filter((p) => ehHoje(p.createdAt)).length;
 
   return (
-    <div className="p-8">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-stone-500">Visão geral do seu cardápio e pedidos</p>
-      </header>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <PageHeader titulo="Dashboard" subtitulo="Visão geral do seu cardápio e pedidos" />
 
       {erro && (
-        <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+        <div className="mt-4 rounded-card border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-danger">{erro}</div>
       )}
 
       {carregando ? (
-        <p className="mt-8 text-sm text-stone-500">Carregando...</p>
+        <EmptyState>Carregando...</EmptyState>
       ) : (
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <CardEstatistica Icone={Package} label="Total de produtos" valor={totalProdutos} />
-            <CardEstatistica
+            <MetricCard Icone={Package} label="Total de produtos" valor={totalProdutos} />
+            <MetricCard
               Icone={CheckCircle2}
               label="Produtos ativos"
               valor={produtosAtivos}
               sub={`${totalProdutos - produtosAtivos} sem venda ativa`}
-              corIcone="text-emerald-600 bg-emerald-100"
+              corIcone="text-success bg-emerald-50"
             />
-            <CardEstatistica
+            <MetricCard
               Icone={DollarSign}
               label="Ticket médio"
               valor={formatarPreco(ticketMedio)}
-              corIcone="text-amber-600 bg-amber-100"
+              corIcone="text-warning bg-amber-50"
             />
-            <CardEstatistica
+            <MetricCard
               Icone={ClipboardList}
               label="Pedidos hoje"
               valor={pedidosHoje}
-              corIcone="text-rose-600 bg-rose-100"
+              corIcone="text-danger bg-rose-50"
             />
           </div>
 
           {pedidos.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-sm font-semibold text-stone-700">Pedidos recentes</h2>
-              <div className="mt-3 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-                {pedidos.slice(0, 5).map((pedido, i) => (
-                  <div
-                    key={pedido.id}
-                    className={`flex items-center justify-between px-5 py-4 text-sm ${
-                      i > 0 ? 'border-t border-stone-100' : ''
-                    }`}
-                  >
-                    <span className="font-mono text-xs text-stone-500">{pedido.orderId}</span>
-                    <span className="text-stone-600">{pedido.plataforma}</span>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                        pedido.confirmadoEm ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                      }`}
-                    >
-                      {pedido.confirmadoEm ? 'Confirmado' : 'Pendente'}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <h2 className="text-sm font-semibold text-text-secondary">Pedidos recentes</h2>
+              <DataTable colunas={COLUNAS_PEDIDOS_RECENTES} linhas={pedidos.slice(0, 5)} chaveLinha={(p) => p.id} />
             </div>
           )}
         </>

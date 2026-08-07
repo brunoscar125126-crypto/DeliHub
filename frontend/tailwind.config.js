@@ -10,7 +10,36 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default {
   content: [path.join(__dirname, 'index.html'), path.join(__dirname, 'src/**/*.{js,jsx}')],
   theme: {
-    extend: {},
+    extend: {
+      // Design tokens do refactor visual — usar essas classes (bg-surface,
+      // text-text-secondary, border-border, etc.) em vez de cores soltas
+      // tipo stone-200/orange-500 daqui pra frente, pra manter consistência.
+      colors: {
+        background: '#F8F9FB',
+        surface: '#FFFFFF',
+        'surface-muted': '#F5F6F8',
+        primary: {
+          DEFAULT: '#FF6B1A',
+          hover: '#EA5B0C',
+        },
+        'text-primary': '#18181B',
+        'text-secondary': '#71717A',
+        border: '#E4E4E7',
+        success: '#10B981',
+        warning: '#F59E0B',
+        danger: '#F43F5E',
+      },
+      borderRadius: {
+        card: '14px',
+        control: '10px',
+      },
+      boxShadow: {
+        card: '0 1px 3px rgba(0,0,0,0.05)',
+      },
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 };

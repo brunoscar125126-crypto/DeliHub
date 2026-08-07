@@ -1,5 +1,8 @@
 import { useCallback, useState } from 'react';
 import { api } from '../lib/api.js';
+import PageHeader from '../components/PageHeader.jsx';
+import PrimaryButton from '../components/PrimaryButton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 const PLATAFORMA_LABEL = { noventaenove: '99Food', ifood: 'iFood' };
 
@@ -83,24 +86,21 @@ export default function Cardapio() {
   const selecionadosCount = Object.values(selecionados).filter(Boolean).length;
 
   return (
-    <div className="p-8">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900">Cardápio</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          Puxa os produtos já existentes numa plataforma. Você decide, item a item: criar produto novo ou mesclar com
-          um que já foi importado de outra plataforma.
-        </p>
-      </header>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        titulo="Cardápio"
+        subtitulo="Puxa os produtos já existentes numa plataforma. Você decide, item a item: criar produto novo ou mesclar com um que já foi importado de outra plataforma."
+      />
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-lg border border-stone-300 bg-white p-1 shadow-sm">
+        <div className="inline-flex rounded-control border border-border bg-surface p-1 shadow-card">
           {Object.entries(PLATAFORMA_LABEL).map(([valor, label]) => (
             <button
               key={valor}
               type="button"
               onClick={() => setPlataforma(valor)}
-              className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition ${
-                plataforma === valor ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'
+              className={`min-h-[36px] rounded-control px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 ${
+                plataforma === valor ? 'bg-text-primary text-white' : 'text-text-secondary hover:bg-surface-muted'
               }`}
             >
               {label}
@@ -108,21 +108,16 @@ export default function Cardapio() {
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={buscar}
-          disabled={carregando}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
-        >
+        <PrimaryButton onClick={buscar} disabled={carregando}>
           {carregando ? 'Buscando...' : 'Buscar cardápio'}
-        </button>
+        </PrimaryButton>
 
         {selecionadosCount > 0 && (
           <button
             type="button"
             onClick={importarSelecionados}
             disabled={importando}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50"
+            className="inline-flex min-h-[44px] items-center rounded-control bg-success px-4 py-2 text-sm font-medium text-white shadow-card transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
           >
             {importando ? 'Importando...' : `Importar ${selecionadosCount} selecionado(s)`}
           </button>
@@ -130,13 +125,13 @@ export default function Cardapio() {
       </div>
 
       {erro && (
-        <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+        <div className="mt-4 rounded-card border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-danger">{erro}</div>
       )}
 
       {resultado && (
-        <div className="mt-4 space-y-1 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm shadow-sm">
+        <div className="mt-4 space-y-1 rounded-card border border-border bg-surface-muted px-4 py-3 text-sm shadow-card">
           {resultado.map((r) => (
-            <p key={r.itemId} className={r.sucesso ? 'text-emerald-700' : 'text-red-700'}>
+            <p key={r.itemId} className={r.sucesso ? 'text-success' : 'text-danger'}>
               {r.itemId}:{' '}
               {r.sucesso
                 ? r.modo === 'mesclado'
@@ -149,33 +144,38 @@ export default function Cardapio() {
       )}
 
       {itens.length > 0 && (
-        <div className="mt-6 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+        <div className="mt-6 divide-y divide-border overflow-hidden rounded-card border border-border bg-surface shadow-card">
           {itens.map((item) => (
-            <div key={item.itemId} className="flex items-center gap-3 px-5 py-4 hover:bg-stone-50/60">
-              <input
-                type="checkbox"
-                checked={!!selecionados[item.itemId]}
-                disabled={item.jaImportado}
-                onChange={() => alternarSelecao(item.itemId)}
-                className="h-4 w-4 shrink-0 rounded border-stone-300 disabled:opacity-40"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-stone-900">{item.nome}</p>
-                <p className="text-xs text-stone-500">{formatarPreco(item.precoCentavos)}</p>
-                {item.sugestaoMatchId && !item.jaImportado && (
-                  <p className="text-[11px] text-amber-600">produto parecido já existe — sugestão pré-selecionada</p>
-                )}
+            <div
+              key={item.itemId}
+              className="flex flex-col gap-3 px-5 py-4 hover:bg-surface-muted/60 sm:flex-row sm:items-center"
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={!!selecionados[item.itemId]}
+                  disabled={item.jaImportado}
+                  onChange={() => alternarSelecao(item.itemId)}
+                  className="h-4 w-4 shrink-0 rounded border-border disabled:opacity-40"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-text-primary">{item.nome}</p>
+                  <p className="text-xs text-text-secondary">{formatarPreco(item.precoCentavos)}</p>
+                  {item.sugestaoMatchId && !item.jaImportado && (
+                    <p className="text-[11px] text-warning">produto parecido já existe — sugestão pré-selecionada</p>
+                  )}
+                </div>
               </div>
 
               {item.jaImportado ? (
-                <span className="shrink-0 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-500">
+                <span className="ml-auto shrink-0 rounded-full bg-surface-muted px-3 py-1 text-xs font-medium text-text-secondary">
                   Já importado
                 </span>
               ) : (
                 <select
                   value={escolhas[item.itemId] ?? ''}
                   onChange={(e) => mudarEscolha(item.itemId, e.target.value)}
-                  className="shrink-0 rounded-lg border border-stone-300 px-2.5 py-1.5 text-xs text-stone-700"
+                  className="ml-auto shrink-0 rounded-control border border-border px-2.5 py-1.5 text-xs text-text-primary"
                 >
                   <option value="">Criar produto novo</option>
                   {produtosExistentes.map((p) => (
@@ -191,9 +191,7 @@ export default function Cardapio() {
       )}
 
       {!carregando && itens.length === 0 && !erro && (
-        <p className="mt-8 text-sm text-stone-500">
-          Clique em &quot;Buscar cardápio&quot; pra ver os produtos dessa plataforma.
-        </p>
+        <EmptyState>Clique em &quot;Buscar cardápio&quot; pra ver os produtos dessa plataforma.</EmptyState>
       )}
     </div>
   );

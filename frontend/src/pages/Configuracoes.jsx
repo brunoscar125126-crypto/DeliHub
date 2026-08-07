@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
+import PageHeader from '../components/PageHeader.jsx';
+import PrimaryButton from '../components/PrimaryButton.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 
 const DIAS = ['SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO', 'DOMINGO'];
 const DIA_LABEL = {
@@ -66,36 +69,36 @@ function GradeSemanal({ turnos, editando, onChange }) {
   return (
     <div className="space-y-1.5">
       {DIAS.map((dia) => (
-        <div key={dia} className="flex items-start gap-2 text-sm">
-          <span className="w-16 shrink-0 pt-1 text-stone-500">{DIA_LABEL[dia]}</span>
+        <div key={dia} className="flex flex-col gap-1 text-sm sm:flex-row sm:items-start sm:gap-2">
+          <span className="w-16 shrink-0 pt-1 text-text-secondary">{DIA_LABEL[dia]}</span>
           <div className="flex-1 space-y-1">
-            {porDia[dia].length === 0 && <span className="text-stone-400">Fechado</span>}
+            {porDia[dia].length === 0 && <span className="text-text-secondary">Fechado</span>}
             {porDia[dia].map((faixa, i) =>
               editando ? (
-                <div key={i} className="flex items-center gap-1.5">
+                <div key={i} className="flex flex-wrap items-center gap-1.5">
                   <input
                     type="time"
                     value={faixa.inicio}
                     onChange={(e) => atualizarFaixa(dia, i, 'inicio', e.target.value)}
-                    className="rounded border border-stone-300 px-1.5 py-0.5 text-xs"
+                    className="min-h-[36px] rounded-control border border-border px-1.5 py-0.5 text-xs"
                   />
-                  <span className="text-stone-400">–</span>
+                  <span className="text-text-secondary">–</span>
                   <input
                     type="time"
                     value={faixa.fim}
                     onChange={(e) => atualizarFaixa(dia, i, 'fim', e.target.value)}
-                    className="rounded border border-stone-300 px-1.5 py-0.5 text-xs"
+                    className="min-h-[36px] rounded-control border border-border px-1.5 py-0.5 text-xs"
                   />
                   <button
                     type="button"
                     onClick={() => removerFaixa(dia, i)}
-                    className="text-xs text-red-500 hover:text-red-700"
+                    className="px-1 text-xs text-danger hover:opacity-80"
                   >
                     remover
                   </button>
                 </div>
               ) : (
-                <span key={i} className="block text-stone-700">
+                <span key={i} className="block text-text-primary">
                   {faixa.inicio} – {faixa.fim}
                 </span>
               )
@@ -104,7 +107,7 @@ function GradeSemanal({ turnos, editando, onChange }) {
               <button
                 type="button"
                 onClick={() => adicionarFaixa(dia)}
-                className="text-xs text-stone-500 hover:text-stone-700"
+                className="text-xs text-text-secondary hover:text-text-primary"
               >
                 + adicionar turno
               </button>
@@ -147,27 +150,27 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
 
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-stone-900">Pausar {PLATAFORMA_LABEL[plataforma]}</h3>
+      <div className="w-full max-w-sm rounded-card bg-surface p-6 shadow-xl">
+        <h3 className="text-lg font-semibold text-text-primary">Pausar {PLATAFORMA_LABEL[plataforma]}</h3>
 
         {plataforma === 'ifood' ? (
           <div className="mt-4 space-y-3.5">
             <label className="block text-sm">
-              <span className="text-stone-500">Motivo (opcional)</span>
+              <span className="text-text-secondary">Motivo (opcional)</span>
               <input
                 type="text"
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
                 placeholder="Ex: falta de entregador"
               />
             </label>
             <label className="block text-sm">
-              <span className="text-stone-500">Duração</span>
+              <span className="text-text-secondary">Duração</span>
               <select
                 value={minutos}
                 onChange={(e) => setMinutos(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
               >
                 <option value={15}>15 minutos</option>
                 <option value={30}>30 minutos</option>
@@ -179,11 +182,11 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
         ) : (
           <div className="mt-4 space-y-3.5">
             <label className="block text-sm">
-              <span className="text-stone-500">Duração</span>
+              <span className="text-text-secondary">Duração</span>
               <select
                 value={duracao}
                 onChange={(e) => setDuracao(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
               >
                 {DURACOES_99FOOD.map((d) => (
                   <option key={d.valor} value={d.valor}>
@@ -193,11 +196,11 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-stone-500">Motivo (obrigatório)</span>
+              <span className="text-text-secondary">Motivo (obrigatório)</span>
               <select
                 value={motivoCode}
                 onChange={(e) => setMotivoCode(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-control border border-border px-3 py-2 text-sm"
               >
                 {MOTIVOS_99FOOD.map((m) => (
                   <option key={m.valor} value={m.valor}>
@@ -206,20 +209,20 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 text-sm text-stone-600">
+            <label className="flex items-center gap-2 text-sm text-text-secondary">
               <input type="checkbox" checked={autoRetomar} onChange={(e) => setAutoRetomar(e.target.checked)} />
               Retomar automaticamente depois da pausa
             </label>
           </div>
         )}
 
-        {erro && <p className="mt-3 text-xs text-red-600">{erro}</p>}
+        {erro && <p className="mt-3 text-xs text-danger">{erro}</p>}
 
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={onFechar}
-            className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+            className="min-h-[44px] rounded-control border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-muted"
           >
             Cancelar
           </button>
@@ -227,7 +230,7 @@ function ModalPausa({ plataforma, onFechar, onCriada }) {
             type="button"
             onClick={confirmar}
             disabled={enviando}
-            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-500 disabled:opacity-50"
+            className="min-h-[44px] rounded-control bg-warning px-4 py-2 text-sm font-medium text-white shadow-card hover:opacity-90 disabled:opacity-50"
           >
             {enviando ? 'Pausando...' : 'Confirmar pausa'}
           </button>
@@ -264,9 +267,9 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-stone-900">{PLATAFORMA_LABEL[plataforma]}</h3>
+    <div className="rounded-card border border-border bg-surface p-5 shadow-card">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-semibold text-text-primary">{PLATAFORMA_LABEL[plataforma]}</h3>
         <div className="flex gap-2">
           {editando ? (
             <>
@@ -276,7 +279,7 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
                   setEditando(false);
                   setRascunho(turnos);
                 }}
-                className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                className="min-h-[36px] rounded-control border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-muted"
               >
                 Cancelar
               </button>
@@ -284,7 +287,7 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
                 type="button"
                 onClick={salvar}
                 disabled={salvando}
-                className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-stone-700 disabled:opacity-50"
+                className="min-h-[36px] rounded-control bg-text-primary px-3 py-1.5 text-xs font-medium text-white shadow-card disabled:opacity-50"
               >
                 {salvando ? 'Salvando...' : 'Salvar horário'}
               </button>
@@ -294,14 +297,14 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
               <button
                 type="button"
                 onClick={() => setMostrarPausa(true)}
-                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                className="min-h-[36px] rounded-control border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-warning hover:bg-amber-100"
               >
                 Pausar agora
               </button>
               <button
                 type="button"
                 onClick={() => setEditando(true)}
-                className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                className="min-h-[36px] rounded-control border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-muted"
               >
                 Customizar
               </button>
@@ -310,8 +313,8 @@ function PainelPersonalizado({ plataforma, turnos, erro, onSalvo }) {
         </div>
       </div>
 
-      {erro && <p className="mt-2 text-xs text-red-600">Erro ao carregar: {erro}</p>}
-      {erroSalvar && <p className="mt-2 text-xs text-red-600">Erro ao salvar: {erroSalvar}</p>}
+      {erro && <p className="mt-2 text-xs text-danger">Erro ao carregar: {erro}</p>}
+      {erroSalvar && <p className="mt-2 text-xs text-danger">Erro ao salvar: {erroSalvar}</p>}
 
       <div className="mt-4">
         <GradeSemanal turnos={editando ? rascunho : turnos} editando={editando} onChange={setRascunho} />
@@ -388,33 +391,33 @@ export default function Configuracoes() {
   }
 
   return (
-    <div className="p-8">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-stone-900">Configurações</h1>
-          <p className="mt-1 text-sm text-stone-500">Horário de funcionamento e pausas</p>
-        </div>
-        <button
-          type="button"
-          onClick={carregar}
-          className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-600 shadow-sm hover:bg-stone-50"
-        >
-          Atualizar
-        </button>
-      </header>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        titulo="Configurações"
+        subtitulo="Horário de funcionamento e pausas"
+        acoes={
+          <button
+            type="button"
+            onClick={carregar}
+            className="min-h-[44px] rounded-control border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary shadow-card hover:bg-surface-muted"
+          >
+            Atualizar
+          </button>
+        }
+      />
 
       {erro && (
-        <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+        <div className="mt-4 rounded-card border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-danger">{erro}</div>
       )}
 
       {carregando ? (
-        <p className="mt-8 text-sm text-stone-500">Carregando...</p>
+        <EmptyState>Carregando...</EmptyState>
       ) : (
         dados && (
           <>
-            <section className="mt-6 rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-              <h2 className="font-semibold text-stone-900">Horário semanal</h2>
-              <p className="mt-1 text-sm text-stone-500">
+            <section className="mt-6 rounded-card border border-border bg-surface p-5 shadow-card">
+              <h2 className="font-semibold text-text-primary">Horário semanal</h2>
+              <p className="mt-1 text-sm text-text-secondary">
                 Edite uma vez e aplique nas plataformas marcadas abaixo. Plataforma desmarcada mantém o horário atual
                 dela — customize individualmente na seção abaixo, se precisar.
               </p>
@@ -423,10 +426,10 @@ export default function Configuracoes() {
                 <GradeSemanal turnos={turnosUnificados} editando onChange={setTurnosUnificados} />
               </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-stone-100 pt-5">
-                <span className="text-sm text-stone-600">Aplicar em:</span>
+              <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-border pt-5">
+                <span className="text-sm text-text-secondary">Aplicar em:</span>
                 {Object.keys(PLATAFORMA_LABEL).map((plataforma) => (
-                  <label key={plataforma} className="flex items-center gap-1.5 text-sm text-stone-700">
+                  <label key={plataforma} className="flex items-center gap-1.5 text-sm text-text-primary">
                     <input
                       type="checkbox"
                       checked={aplicarEm[plataforma]}
@@ -435,23 +438,19 @@ export default function Configuracoes() {
                     {PLATAFORMA_LABEL[plataforma]}
                   </label>
                 ))}
-                <button
-                  type="button"
+                <PrimaryButton
                   onClick={salvarUnificado}
                   disabled={salvandoUnificado || Object.values(aplicarEm).every((v) => !v)}
-                  className="ml-auto rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-orange-600 disabled:opacity-50"
+                  className="sm:ml-auto"
                 >
                   {salvandoUnificado ? 'Salvando...' : 'Salvar horário'}
-                </button>
+                </PrimaryButton>
               </div>
 
               {resultadoUnificado && (
                 <div className="mt-3 space-y-1">
                   {resultadoUnificado.map((r) => (
-                    <p
-                      key={r.plataforma}
-                      className={`text-xs ${r.sucesso ? 'text-emerald-600' : 'text-red-600'}`}
-                    >
+                    <p key={r.plataforma} className={`text-xs ${r.sucesso ? 'text-success' : 'text-danger'}`}>
                       {PLATAFORMA_LABEL[r.plataforma]}: {r.sucesso ? 'salvo com sucesso' : r.erro}
                     </p>
                   ))}
@@ -460,7 +459,7 @@ export default function Configuracoes() {
             </section>
 
             <section className="mt-8">
-              <h2 className="text-sm font-semibold text-stone-700">Customizar por plataforma</h2>
+              <h2 className="text-sm font-semibold text-text-secondary">Customizar por plataforma</h2>
               <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <PainelPersonalizado
                   plataforma="ifood"
