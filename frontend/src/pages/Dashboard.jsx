@@ -9,7 +9,7 @@ import StatusBadge from '../components/StatusBadge.jsx';
 import PlatformBadge from '../components/PlatformBadge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ModalPedido from '../components/ModalPedido.jsx';
-import BotaoConfirmarPedido from '../components/BotaoConfirmarPedido.jsx';
+import { statusPedido } from '../lib/statusPedido.js';
 
 function formatarPreco(centavos) {
   return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -23,21 +23,35 @@ function ehHoje(dataISO) {
   );
 }
 
+const COLUNAS_PEDIDOS_RECENTES = [
+  {
+    chave: 'orderId',
+    label: 'Pedido',
+    render: (p) => <span className="font-mono text-xs text-text-secondary">{p.orderId}</span>,
+  },
+  { chave: 'plataforma', label: 'Plataforma', render: (p) => <PlatformBadge plataforma={p.plataforma} /> },
+  {
+    chave: 'status',
+    label: 'Status',
+    render: (p) => {
+      const { label, variante } = statusPedido(p.statusEvento);
+      return <StatusBadge variante={variante}>{label}</StatusBadge>;
+    },
+  },
+];
+
 // Intervalo do polling dos produtos (independente do de pedidos, que já vem
 // do PedidosContext). GET /api/produtos também só lê do nosso banco.
 const INTERVALO_POLLING_MS = 8000;
 
 export default function Dashboard() {
-  // Pedidos/polling agora vêm do PedidosContext (levantado pro App.jsx) —
-  // roda em qualquer página, então a detecção de pedido novo (som/notificação)
-  // não depende de estar com o Dashboard aberto.
-  const { pedidos, patchPedido } = usePedidos();
+  // Pedidos/polling vêm do PedidosContext (levantado pro App.jsx) — só
+  // leitura, o DeliHub não decide mais aceitar/recusar pedido aqui.
+  const { pedidos } = usePedidos();
 
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
-  // Mesmo padrão da página Pedidos: guarda o id, não o objeto, pra
-  // acompanhar atualizações do polling enquanto o modal tá aberto.
   const [pedidoSelecionadoId, setPedidoSelecionadoId] = useState(null);
   const pedidoSelecionado = pedidos.find((p) => p.id === pedidoSelecionadoId) ?? null;
 
@@ -58,25 +72,6 @@ export default function Dashboard() {
     const intervalo = setInterval(() => carregarProdutos(true), INTERVALO_POLLING_MS);
     return () => clearInterval(intervalo);
   }, [carregarProdutos]);
-
-  const colunasPedidosRecentes = [
-    {
-      chave: 'orderId',
-      label: 'Pedido',
-      render: (p) => <span className="font-mono text-xs text-text-secondary">{p.orderId}</span>,
-    },
-    { chave: 'plataforma', label: 'Plataforma', render: (p) => <PlatformBadge plataforma={p.plataforma} /> },
-    {
-      chave: 'status',
-      label: 'Status',
-      render: (p) =>
-        p.confirmadoEm ? (
-          <StatusBadge variante="success">Confirmado</StatusBadge>
-        ) : (
-          <BotaoConfirmarPedido pedido={p} onConfirmado={patchPedido} />
-        ),
-    },
-  ];
 
   const totalProdutos = produtos.length;
   const produtosAtivos = produtos.filter((p) => p.plataformas.some((pp) => pp.status === 'ATIVO')).length;
@@ -132,7 +127,7 @@ export default function Dashboard() {
             <div className="mt-8">
               <h2 className="text-sm font-semibold text-text-secondary">Pedidos recentes</h2>
               <DataTable
-                colunas={colunasPedidosRecentes}
+                colunas={COLUNAS_PEDIDOS_RECENTES}
                 linhas={pedidos.slice(0, 5)}
                 chaveLinha={(p) => p.id}
                 onLinhaClick={(p) => setPedidoSelecionadoId(p.id)}
@@ -143,11 +138,7 @@ export default function Dashboard() {
       )}
 
       {pedidoSelecionado && (
-        <ModalPedido
-          pedido={pedidoSelecionado}
-          onFechar={() => setPedidoSelecionadoId(null)}
-          onConfirmado={patchPedido}
-        />
+        <ModalPedido pedido={pedidoSelecionado} onFechar={() => setPedidoSelecionadoId(null)} />
       )}
     </div>
   );

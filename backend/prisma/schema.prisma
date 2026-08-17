@@ -101,23 +101,38 @@ model EventoPedido {
   @@map("eventos_pedido")
 }
 
-// Pedido processado a partir de um evento orderNew (99Food, por enquanto —
-// campo `plataforma` já deixa espaço pra quando o iFood entrar aqui
-// também). shop/price/receiveAddress/orderItems ficam como Json porque
+// Pedido — upsertado a cada evento de status recebido de qualquer
+// plataforma (99Food via webhook, iFood via webhook+polling), não só na
+// criação. shop/price/receiveAddress/orderItems ficam como Json porque
 // ainda não temos o sub-schema completo de cada um confirmado — payloadBruto
-// guarda o order_info inteiro como rede de segurança.
+// guarda o payload cru inteiro como rede de segurança.
+//
+// DeliHub não decide mais aceitar/recusar pedido — isso passou a ser feito
+// direto no app oficial de cada plataforma. Este model é só histórico/
+// leitura do status real relatado pela plataforma.
 model Pedido {
   id             String    @id @default(cuid())
   plataforma     String
   // order_id da plataforma. 64-bit na 99Food — guardado como string pra não
   // perder precisão (ver nota sobre json-bigint em routes/webhooks.js).
   orderId        String
-  status         Int
+  // Código numérico de status da 99Food (ex: 100). Opcional porque o iFood
+  // não tem um análogo numérico — usa strings (ver statusEvento).
+  status         Int?
+  // O "type"/"code" cru que a plataforma mandou nesse evento (99Food:
+  // "orderNew" etc.; iFood: "PLC"/"CFM"/"RTP"/"DSP"/"CON"/"CAN" ou os
+  // fullCode equivalentes) — é o campo que o frontend usa pra mostrar o
+  // status legível (novo/confirmado/pronto/saiu para entrega/entregue/
+  // cancelado). Sempre o valor do ÚLTIMO evento processado pra esse pedido.
+  statusEvento   String?
   shop           Json
   price          Json
   receiveAddress Json
   orderItems     Json
   payloadBruto   Json
+  // Campo legado de quando o DeliHub confirmava pedido automaticamente —
+  // mantido só como histórico dos pedidos já confirmados por esse sistema
+  // antigo; não é mais escrito por nenhuma rota.
   confirmadoEm   DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

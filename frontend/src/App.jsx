@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import AppSidebar from './components/AppSidebar.jsx';
 import AppHeader from './components/AppHeader.jsx';
-import NotificacoesPedidos from './components/NotificacoesPedidos.jsx';
 import { PedidosProvider } from './context/PedidosContext.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Cardapio from './pages/Cardapio.jsx';
@@ -38,7 +37,6 @@ export default function App() {
         />
         <div className="flex min-h-screen flex-1 flex-col overflow-x-hidden">
           <AppHeader onAbrirMenu={() => setSidebarAberta(true)} />
-          <NotificacoesPedidos />
           <main className="flex-1">
             <Pagina />
           </main>

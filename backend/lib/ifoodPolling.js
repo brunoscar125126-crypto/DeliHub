@@ -1,10 +1,13 @@
-// Loop de polling da Events API do iFood — só existe porque o iFood não
-// empurra pedido pra webhook nenhum (ver connectors/ifood.js). A cada
-// intervalo, busca eventos pendentes, salva o payload bruto (formato ainda
-// não confirmado neste projeto) em EventoPedido, e confirma o recebimento.
+// Loop de polling da Events API do iFood — existe porque, mesmo com o
+// webhook ativo (ver routes/webhooks.js:/ifood), manter os dois canais
+// simultâneos dá redundância contra falha de entrega de um deles. A cada
+// intervalo, busca eventos pendentes, salva o payload bruto em EventoPedido,
+// processa cada um (busca o pedido completo e atualiza o histórico de
+// status — ver lib/processarEventosIfood.js) e confirma o recebimento.
 
 const ifood = require('../connectors/ifood');
 const prisma = require('./prisma');
+const { processarEventoIfood } = require('./processarEventosIfood');
 
 const INTERVALO_MS = Number(process.env.IFOOD_POLLING_INTERVAL_MS) || 30_000;
 
@@ -25,6 +28,13 @@ async function cicloDePolling() {
           payload: evento,
         })),
       });
+      // Sequencial, não Promise.all: evita disparar N chamadas simultâneas
+      // pra buscarPedido() (e pro token/rate limit por trás dela) de uma vez.
+      for (const evento of eventos) {
+        await processarEventoIfood(evento).catch((err) =>
+          console.error('[ifoodPolling] falha ao processar evento:', err.message)
+        );
+      }
       await ifood.confirmarEventos(eventos.map((e) => e.id).filter(Boolean));
     }
   } catch (err) {

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { ClipboardList, DollarSign, Clock } from 'lucide-react';
+import { ClipboardList, DollarSign } from 'lucide-react';
 import { usePedidos } from '../context/PedidosContext.jsx';
-import BotaoConfirmarPedido from '../components/BotaoConfirmarPedido.jsx';
 import PageHeader from '../components/PageHeader.jsx';
 import MetricCard from '../components/MetricCard.jsx';
 import DataTable from '../components/DataTable.jsx';
@@ -9,6 +8,7 @@ import StatusBadge from '../components/StatusBadge.jsx';
 import PlatformBadge from '../components/PlatformBadge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ModalPedido from '../components/ModalPedido.jsx';
+import { statusPedido } from '../lib/statusPedido.js';
 
 function formatarPreco(centavos) {
   if (centavos == null) return '—';
@@ -30,19 +30,21 @@ function ehHoje(dataISO) {
   );
 }
 
+/**
+ * Histórico/visualização de status — o DeliHub não decide mais aceitar ou
+ * recusar pedido (isso é feito direto no app oficial de cada plataforma),
+ * então essa tela não tem mais nenhuma ação, só mostra o status real que
+ * cada plataforma reportou por último (novo/confirmado/pronto/saiu para
+ * entrega/entregue/cancelado).
+ */
 export default function Pedidos() {
-  // Pedidos/polling agora vêm do PedidosContext (levantado pro App.jsx) —
-  // roda em qualquer página, não só quando esta tela está montada.
-  const { pedidos, carregando, erro, recarregar, patchPedido, intervaloPollingMs } = usePedidos();
+  const { pedidos, carregando, erro, recarregar, intervaloPollingMs } = usePedidos();
 
-  // Guarda só o id — assim, se o polling trouxer um dado novo (ex: confirmou
-  // enquanto o modal tava aberto), o detalhe exibido acompanha.
   const [pedidoSelecionadoId, setPedidoSelecionadoId] = useState(null);
   const pedidoSelecionado = pedidos.find((p) => p.id === pedidoSelecionadoId) ?? null;
 
   const pedidosHoje = pedidos.filter((p) => ehHoje(p.createdAt));
   const valorHoje = pedidosHoje.reduce((soma, p) => soma + (precoTotal(p.price) ?? 0), 0);
-  const pendentes = pedidos.filter((p) => !p.confirmadoEm).length;
 
   const colunas = [
     {
@@ -62,14 +64,12 @@ export default function Pedidos() {
       render: (p) => <span className="font-medium">{formatarPreco(precoTotal(p.price))}</span>,
     },
     {
-      chave: 'confirmacao',
-      label: 'Confirmação',
-      render: (p) =>
-        p.confirmadoEm ? (
-          <StatusBadge variante="success">Confirmado</StatusBadge>
-        ) : (
-          <BotaoConfirmarPedido pedido={p} onConfirmado={patchPedido} />
-        ),
+      chave: 'status',
+      label: 'Status',
+      render: (p) => {
+        const { label, variante } = statusPedido(p.statusEvento);
+        return <StatusBadge variante={variante}>{label}</StatusBadge>;
+      },
     },
     {
       chave: 'recebidoEm',
@@ -82,7 +82,7 @@ export default function Pedidos() {
     <div className="p-4 sm:p-6 lg:p-8">
       <PageHeader
         titulo="Pedidos"
-        subtitulo="Pedidos recebidos via webhook/polling das plataformas"
+        subtitulo="Histórico de status dos pedidos — captado via webhook/polling das plataformas. Aceitar/recusar é feito no app oficial de cada uma."
         acoes={
           <div className="flex items-center gap-3">
             <span className="hidden items-center gap-1.5 text-xs text-text-secondary sm:flex">
@@ -105,7 +105,7 @@ export default function Pedidos() {
       )}
 
       {!carregando && pedidos.length > 0 && (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <MetricCard Icone={ClipboardList} label="Total de pedidos" valor={pedidos.length} />
           <MetricCard
             Icone={DollarSign}
@@ -113,13 +113,6 @@ export default function Pedidos() {
             valor={formatarPreco(valorHoje)}
             sub={`${pedidosHoje.length} pedido(s) hoje`}
             corIcone="text-success bg-emerald-50"
-          />
-          <MetricCard
-            Icone={Clock}
-            label="Pedidos pendentes"
-            valor={pendentes}
-            sub="aguardando confirmação"
-            corIcone="text-warning bg-amber-50"
           />
         </div>
       )}
@@ -138,11 +131,7 @@ export default function Pedidos() {
       )}
 
       {pedidoSelecionado && (
-        <ModalPedido
-          pedido={pedidoSelecionado}
-          onFechar={() => setPedidoSelecionadoId(null)}
-          onConfirmado={patchPedido}
-        />
+        <ModalPedido pedido={pedidoSelecionado} onFechar={() => setPedidoSelecionadoId(null)} />
       )}
     </div>
   );
