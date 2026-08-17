@@ -65,55 +65,89 @@ function assinaturaValidaIfood(rawBody, clientSecret, assinaturaRecebida) {
 }
 
 /**
- * Grava/atualiza o Pedido a partir de um order_info da 99Food. Não é mais
- * restrito a type === "orderNew" — qualquer evento que traga order_info faz
- * upsert, guardando o `type` recebido em statusEvento. É assim que a gente
- * acompanha o pedido evoluindo (novo → confirmado → pronto → ... →
- * entregue/cancelado) sem nunca chamar nenhuma API de confirmação.
+ * Grava/atualiza o Pedido a partir de um evento da 99Food. `data` é
+ * `payload.data` inteiro, não só `order_info` — porque, na prática (visto ao
+ * vivo em produção), nem todo evento tem o mesmo formato:
+ *   - "orderNew" (e provavelmente outros de status "cheio"): manda
+ *     `data.order_info` com o pedido completo — dá pra criar OU atualizar.
+ *   - "orderCancel" (confirmado ao vivo em 2026-08-17): manda só
+ *     `data.order_id`, sem order_info nenhum — só dá pra ATUALIZAR um
+ *     pedido que já exista (não tem shop/price/itens pra criar um do zero).
+ * Nos dois casos, guarda o `type` recebido em statusEvento — é assim que a
+ * gente acompanha o pedido evoluindo (novo → confirmado → ... → entregue/
+ * cancelado) sem nunca chamar nenhuma API de confirmação/aceite.
  */
-async function processarEvento99Food(tipo, orderInfo) {
-  const {
-    order_id: orderId,
-    status,
-    shop,
-    price,
-    receive_address: receiveAddress,
-    order_items: orderItems,
-  } = orderInfo ?? {};
+async function processarEvento99Food(tipo, data) {
+  const orderInfo = data?.order_info;
+  const orderId = orderInfo?.order_id ?? data?.order_id;
 
   if (!orderId) {
-    console.error('[webhook 99food] evento sem order_id, ignorando payload:', JSON.stringify(orderInfo));
+    console.error('[webhook 99food] evento sem order_id, ignorando payload:', JSON.stringify(data));
     return;
   }
 
+  if (orderInfo) {
+    const { status, shop, price, receive_address: receiveAddress, order_items: orderItems } = orderInfo;
+    try {
+      await prisma.pedido.upsert({
+        where: { plataforma_orderId: { plataforma: 'noventaenove', orderId: String(orderId) } },
+        update: {
+          status,
+          statusEvento: tipo ?? null,
+          shop,
+          price,
+          receiveAddress,
+          orderItems,
+          payloadBruto: orderInfo,
+        },
+        create: {
+          plataforma: 'noventaenove',
+          orderId: String(orderId),
+          status,
+          statusEvento: tipo ?? null,
+          shop,
+          price,
+          receiveAddress,
+          orderItems,
+          payloadBruto: orderInfo,
+        },
+      });
+      console.log(`[webhook 99food] pedido ${orderId} atualizado (status: ${tipo ?? 'desconhecido'})`);
+    } catch (err) {
+      console.error(`[webhook 99food] falha ao gravar Pedido ${orderId}:`, err.message);
+    }
+    return;
+  }
+
+  // Evento enxuto (ex: orderCancel) — só o order_id, sem o pedido completo.
+  // Só dá pra atualizar um pedido que a gente já conhece (do orderNew dele);
+  // se não existir ainda, não tem como criar do zero (faltam campos
+  // obrigatórios como shop/price/itens).
   try {
-    await prisma.pedido.upsert({
-      where: { plataforma_orderId: { plataforma: 'noventaenove', orderId: String(orderId) } },
-      update: { status, statusEvento: tipo ?? null, shop, price, receiveAddress, orderItems, payloadBruto: orderInfo },
-      create: {
-        plataforma: 'noventaenove',
-        orderId: String(orderId),
-        status,
-        statusEvento: tipo ?? null,
-        shop,
-        price,
-        receiveAddress,
-        orderItems,
-        payloadBruto: orderInfo,
-      },
+    const atualizado = await prisma.pedido.updateMany({
+      where: { plataforma: 'noventaenove', orderId: String(orderId) },
+      data: { statusEvento: tipo ?? null },
     });
-    console.log(`[webhook 99food] pedido ${orderId} atualizado (status: ${tipo ?? 'desconhecido'})`);
+    if (atualizado.count === 0) {
+      console.warn(
+        `[webhook 99food] evento "${tipo}" pro pedido ${orderId}, mas ele ainda não existe no nosso banco — ignorado`
+      );
+    } else {
+      console.log(`[webhook 99food] pedido ${orderId} atualizado (status: ${tipo ?? 'desconhecido'}, evento enxuto)`);
+    }
   } catch (err) {
-    console.error(`[webhook 99food] falha ao gravar Pedido ${orderId}:`, err.message);
+    console.error(`[webhook 99food] falha ao atualizar Pedido ${orderId}:`, err.message);
   }
 }
 
 /**
  * POST /api/webhooks/99food
  *
- * Formato confirmado: { app_id, app_shop_id, timestamp, type, data: { order_info } }.
- * Qualquer evento que traga data.order_info faz upsert do Pedido (histórico
- * de status) — sem mais chamar nenhuma API de confirmação/aceite.
+ * Formato confirmado: { app_id, app_shop_id, timestamp, type, data }, onde
+ * `data` é `{ order_info: {...} }` (orderNew) OU só `{ order_id }`
+ * (orderCancel, confirmado ao vivo — ver processarEvento99Food). Qualquer
+ * evento que traga um order_id (de um jeito ou de outro) atualiza o
+ * histórico de status — sem mais chamar nenhuma API de confirmação/aceite.
  */
 router.post(
   '/99food',
@@ -138,8 +172,8 @@ router.post(
       data: { plataforma: 'noventaenove', origem: 'webhook', payload },
     });
 
-    if (payload?.data?.order_info) {
-      await processarEvento99Food(payload.type, payload.data.order_info);
+    if (payload?.data?.order_info || payload?.data?.order_id) {
+      await processarEvento99Food(payload.type, payload.data);
     }
 
     res.status(200).json({ recebido: true });

@@ -8,8 +8,9 @@
 // código não mapeado cai no fallback (mostra o valor cru, sem inventar
 // tradução) em vez de quebrar ou mentir.
 const MAPA_STATUS = {
-  // 99Food
+  // 99Food — confirmados ao vivo em produção (não são só suposição)
   orderNew: { label: 'Novo', variante: 'warning' },
+  orderCancel: { label: 'Cancelado', variante: 'danger' },
 
   // iFood — código curto e fullCode, os dois formatos possíveis do evento
   PLC: { label: 'Novo', variante: 'warning' },
