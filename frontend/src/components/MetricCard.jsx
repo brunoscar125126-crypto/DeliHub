@@ -1,4 +1,4 @@
-/** Card de métrica do topo das páginas (Dashboard, Pedidos). Substitui o antigo CardEstatistica, mesma API de props. */
+/** Card de métrica do topo das páginas (Visão Geral, Pedidos). Substitui o antigo CardEstatistica, mesma API de props. */
 export default function MetricCard({ Icone, label, valor, sub, corIcone = 'text-primary bg-orange-50' }) {
   return (
     <div className="flex items-start gap-3 rounded-card border border-border bg-surface p-5 shadow-card">

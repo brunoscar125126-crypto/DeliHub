@@ -32,3 +32,10 @@ export function statusPedido(statusEvento) {
   if (!statusEvento) return { label: 'Status desconhecido', variante: 'neutral' };
   return MAPA_STATUS[statusEvento] ?? { label: statusEvento, variante: 'neutral' };
 }
+
+const STATUS_CANCELADOS = new Set(['orderCancel', 'CAN', 'CANCELLED']);
+
+/** Usado pra excluir pedido cancelado de faturamento/contagem — não inclui "novo"/"desconhecido" de propósito. */
+export function statusEhCancelado(statusEvento) {
+  return STATUS_CANCELADOS.has(statusEvento);
+}

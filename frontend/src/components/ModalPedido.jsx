@@ -8,7 +8,7 @@ function formatarPreco(centavos) {
   return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-// Mesma lógica de Pedidos.jsx/Dashboard.jsx: o campo de valor varia por
+// Mesma lógica de Pedidos.jsx/VisaoGeral.jsx: o campo de valor varia por
 // plataforma/versão do payload, então pega o primeiro numérico plausível.
 function precoTotal(price) {
   if (!price) return null;

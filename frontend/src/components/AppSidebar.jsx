@@ -2,7 +2,7 @@ import { LayoutDashboard, UtensilsCrossed, Package, ClipboardList, Settings } fr
 import LogoDeliHub from './LogoDeliHub.jsx';
 
 const ITENS = [
-  { valor: 'dashboard', label: 'Dashboard', Icone: LayoutDashboard },
+  { valor: 'visaoGeral', label: 'Visão Geral', Icone: LayoutDashboard },
   { valor: 'cardapio', label: 'Cardápio', Icone: UtensilsCrossed },
   { valor: 'produtos', label: 'Produtos', Icone: Package },
   { valor: 'pedidos', label: 'Pedidos', Icone: ClipboardList },

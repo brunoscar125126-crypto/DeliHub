@@ -1,5 +1,5 @@
-// Único lugar do frontend que fala com o backend. Dashboard/ProdutoCard
-// nunca chamam fetch() diretamente, só as funções daqui.
+// Único lugar do frontend que fala com o backend. As páginas nunca chamam
+// fetch() diretamente, só as funções daqui.
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 

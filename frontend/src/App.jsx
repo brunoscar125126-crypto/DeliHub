@@ -2,14 +2,14 @@ import { useState } from 'react';
 import AppSidebar from './components/AppSidebar.jsx';
 import AppHeader from './components/AppHeader.jsx';
 import { PedidosProvider } from './context/PedidosContext.jsx';
-import Dashboard from './pages/Dashboard.jsx';
+import VisaoGeral from './pages/VisaoGeral.jsx';
 import Cardapio from './pages/Cardapio.jsx';
 import Produtos from './pages/Produtos.jsx';
 import Pedidos from './pages/Pedidos.jsx';
 import Configuracoes from './pages/Configuracoes.jsx';
 
 const PAGINAS = {
-  dashboard: Dashboard,
+  visaoGeral: VisaoGeral,
   cardapio: Cardapio,
   produtos: Produtos,
   pedidos: Pedidos,
@@ -17,7 +17,7 @@ const PAGINAS = {
 };
 
 export default function App() {
-  const [pagina, setPagina] = useState('dashboard');
+  const [pagina, setPagina] = useState('visaoGeral');
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const Pagina = PAGINAS[pagina];
 
